@@ -1,0 +1,1 @@
+We ORG our code at $1000, don't overwrite it!
