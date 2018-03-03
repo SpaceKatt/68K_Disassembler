@@ -12,7 +12,7 @@ LF         EQU       $0A            * Line feed
 START:                              * first instruction of program
 ******************** Start*****************************************************
 
-           MOVEA.W    #$110,A0
+           MOVEA.W    #%110,A0
            MOVE.B    (SAAMSTAB,A0),GOODBUFF
 
 *******************************************************************************
