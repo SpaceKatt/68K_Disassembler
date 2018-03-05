@@ -2,7 +2,7 @@
 * Title      : I/O handling
 * Written by : Natalia Gilbertson
 * Date       :
-* Description:
+* Description: Disassembler I/O code
 *-----------------------------------------------------------
 
 CR         EQU       $0D            * Carriage return
@@ -21,6 +21,7 @@ START:                              * first instruction of program
             LEA     StoreInputStartAddr,A1
             MOVE.B  #2,D0                   *Read string from keyboard into (A1)
             TRAP    #15                     *length of string is stored at D1
+            MOVE.B  D1,D7                   *Store startAddr length at D7
              
             JSR     ValidAddressChars       *check if starting address is valid
             
@@ -32,8 +33,39 @@ START:                              * first instruction of program
             MOVE.B  #2,D0                   *Read string from keyboard into (A1)
             TRAP    #15                     *length of string is stored at D1
             
+            MOVE.B  D7,D0                   *Store startAddr length at D0
+            
             JSR     ValidAddressChars       *check if ending address is valid
   
+            *Now convert input into hex addresses
+            *Store pointer to next opcode in A0
+            *Store ending address at A3
+            
+            *D1 currently holds EndAddr's charLength
+            LEA     StoreInputEndAddr,A4
+            JSR     TranslateInputToAddrReg
+            MOVEA.L A0,A3
+            MOVEA.L #0,A0
+            
+            *Now put StartAddr's charLength into D1
+            MOVE.B  D0,D1                   *get startAddr length into D1
+            LEA     StoreInputStartAddr,A4
+            JSR     TranslateInputToAddrReg
+            
+            
+            *Clear data registers
+            CLR.L   D0
+            CLR.L   D2
+            CLR.L   D4
+            CLR.L   D6
+            CLR.L   D7
+            MOVE.L  #0,A1
+            MOVE.L  #0,A4
+            MOVE.L  #0,A5
+            *A0 holds pointer to next opcode (ptno)
+            *A3 holds the ending address of instructions to disassemble
+            
+            *Set output buffer to A2
        
             STOP    #3000
 
@@ -62,28 +94,57 @@ StoreInputEndAddr2      DC.L    0
 
 *Load the string you want to check into A1 before calling the method
 *Load the length of the string into D1
-ValidAddressChars       CMP.B   #1,D1                   *Must have b/t 1 - 8 characters in address                     
+ValidAddressChars       CMP.B   #1,D1           *Must have b/t 1 - 8 characters in address                     
                         BLT     ThrowInputError
                         CMP.B   #8,D1     
                         BGT     ThrowInputError
                         
-VACloop                 CMP.B   D1,D3                   *D3 is loop counter
+VACloop                 CMP.B   D1,D3           *D3 is loop counter
                         BEQ     endMethodVAC
-                        MOVE.B  (A1)+,D2                *D2 holds current byte to check
+                        MOVE.B  (A1)+,D2        *D2 holds current byte to check
                         CMP.B   #$30,D2
                         BLT     ThrowInputError
                         CMP.B   #$46,D2
                         BGT     ThrowInputError
                         CMP.B   #$40,D2
                         BEQ     ThrowInputError
-                        ADDQ    #1,D3                   *increment counter
+                        ADDQ    #1,D3           *increment counter
                         BRA     VACloop
                         
-endMethodVAC            RTS   
+                        
+endMethodVAC            MOVE.L  #0,D3           *clear out counter data reg
+                        RTS   
 
+
+*Translate the address into A0
+*D1 holds the charLength of the address to decode
+*A4 holds the starting address of the input
+TranslateInputToAddrReg CLR.L   D7
+                        MOVEA.L A4,A5           *Remember the start address
+                        MOVE.B  D1,D4           *Remember the char count
+                        MOVE.B  #1,D6           *shifting variable
+TITARloop1              CMP.B   D1,D3
+                        BEQ     endTITARloop1
+                        CMP.B   #$40,(A4)
+                        BGT     handleAThroughF
+                        SUB.B   #$30,(A4)
+                        BRA     digitBt0And9
+handleAThroughF         SUB.B   #$37,(A4)
+digitBt0And9            ADD.B   (A4),D7
+                        ADDA.L  #1,A4
+                        SUB.B   #1,D1           *decrement counter
+                        CMP.B   D1,D3
+                        BEQ     doNotShiftThisTime     
+                        LSL.L   #$04,D7 
+doNotShiftThisTime      BRA     TITARloop1
+                        
+endTITARloop1           MOVE.L D7,A0
+                        RTS
+                        
 *******************************************************************************
 *******************************************************************************
     END    START                    * last line of source
+
 *~Font name~Courier~
 *~Font size~10~
 *~Tab type~1~
