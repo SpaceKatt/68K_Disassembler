@@ -26,8 +26,6 @@ OP_START   JSR       READ_OP         * Read opcode into D1
 OP_TREE_C  MOVE      #0,CCR          * Clear condition register
            BRA       OP_TREE         * Branch to decision tree
 
-           *BRA       END_THOM        * Let it end! Called elsewhere
-
 *******************************************************************************
 ******************* Read opcode ***********************************************
 READ_OP    MOVE.W    (A0)+,D1        * Read opcode into D1
@@ -66,12 +64,12 @@ OP_TREE    BTST      #15,D1          * Test MSB in opcode
            BTST      #14,D1          * Test second most sig bit in opcode
            BEQ       Z_ONE           * ORI BCLR CMPI MOVEA MOVE
 
-           ** NEG JSR MOVEM LEA SUBQ 
+           ** NEG JSR MOVEM LEA SUBQ
            ** BRA BCS BVC BGE BLT
            BTST      #13,D1          * Test third MSB in opcode
            BNE       BRANCHZ         * BRA BCS BVC BGE BLT
 
-           ** NEG JSR MOVEM LEA SUBQ 
+           ** NEG JSR MOVEM LEA SUBQ
            BTST      #12,D1          * Test fourth MSB in opcode
            BEQ       O_SUBQ
 
@@ -164,13 +162,13 @@ NORM_ROTZ  MOVE.W    #1,EA_FLAG      * Normal 6-EA
            LSR       #8,D2
            LSR       #1,D2
 
-COMP_ROTZ  CMPI.W    #$0000,D2       * C set
+COMP_ROTZ  CMPI.W    #$0000,D2       * ASd signature
            BEQ       O_ASd
-           
-           CMPI.W    #$0001,D2
+
+           CMPI.W    #$0001,D2       * LSd signature
            BEQ       O_LSd
 
-           CMPI.W    #$0002,D2
+           CMPI.W    #$0002,D2       * ROd signature
            BEQ       O_ROd
 
            BRA       INVALID_OP      * Invalid opcode
@@ -211,19 +209,19 @@ Z_ONE_SU   MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            AND.W     D1,D2           * MASK bits
            CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
-           BEQ       O_BRA            
+           BEQ       O_BRA
 
            CMPI.W    #$0500,D2       * Will set zero if 8-11 are 0101
-           BEQ       O_BCS            
+           BEQ       O_BCS
 
            CMPI.W    #$0800,D2       * Will set zero if 8-11 are 1000
-           BEQ       O_BVC            
+           BEQ       O_BVC
 
            CMPI.W    #$0C00,D2       * Will set zero if 8-11 are 1100
-           BEQ       O_BGE            
+           BEQ       O_BGE
 
            CMPI.W    #$0D00,D2       * Will set zero if 8-11 are 1101
-           BEQ       O_BLT            
+           BEQ       O_BLT
 
            BRA       INVALID_OP      * Invalid opcode!
 
@@ -234,24 +232,38 @@ BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 *******************************************************************************
 ********** Opcode specific processing begin ***********************************
 *******************************************************************************
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 ********** ORI ****************************************************************
 O_ORI      MOVE.B    #1,EA_FLAG      * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
-           JSR       WRITE_ANY
-           LEA       STR_PERI,A6     * Load '.' string into A6
-           JSR       WRITE_ANY
- * TODO
+           JSR       NORM_OP_FL      * Write op, '.', get size, write size
+
+           BRA       PREP_EA
+
 *******************************************************************************
 ********** BCLR ***************************************************************
-O_BCLR     NOP * TODO REMEMBER v2
+O_BCLR     BTST      #8,D1           * Delineate between versions of BCLR
+           BEQ       O_BCLR_2        * "Weird" BCLR
+
+           MOVE.B    #2,EA_FLAG      * Load flag for EA
+WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
+           JSR       WRITE_ANY
+           
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** BCLR version 2 *****************************************************
-O_BCLR_2   NOP * TODO
+O_BCLR_2   MOVE.B    #9,EA_FLAG      * Load flag for EA
+
+           BRA       WR_BCLR         * Everything other than EA flag is same
 
 *******************************************************************************
 ********** CMPI ***************************************************************
-O_CMPI     NOP * TODO
+O_CMPI     MOVE.B    #1,EA_FLAG      * Load flag for EA
+           LEA       STR_CMPI,A6      * Load ORI string into A6
+           JSR       NORM_OP_FL      * Write op, '.', get size, write size
+
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** MOVEA **************************************************************
@@ -408,6 +420,18 @@ O_ROd      NOP * TODO
 *******************************************************************************
 
 *******************************************************************************
+******************** The flow of a normal operator ****************************
+NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
+
+           LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY       * Write '.' to buffer
+
+           JSR       GET_OP_SZ       * Get size of the op
+           JSR       WRITE_ANY       * Write size to buffer
+
+           RTS                       * Return for opcode specific processing
+
+*******************************************************************************
 ******************** Prepare for Call to Saam *********************************
 PREP_EA    JSR       SPACE_FILL    * MAYBE CLR ALL REGISTERS?
            MOVE.W    EA_FLAG,D2
@@ -431,10 +455,6 @@ W_NO_SIZE  JSR       WRITE_ANY
            RTS
 
 *******************************************************************************
-******************** Get Size *************************************************
-GET_SIZE   NOP * TODO
-
-*******************************************************************************
 ******************** Fill with whitespace *************************************
 SPACE_FILL LEA       STR_SPACE,A6    * Load whitespace into A6
            MOVE.L    START_BUFF,D0   * Load starting address of buffer into D0
@@ -450,29 +470,59 @@ SPACE_DONE RTS
 ******************** Get MOVE size ********************************************
 GET_MV_SZ  MOVE.W    MASK_12_15,D2
            AND.W     D1,D2
-           CMP.W     #$1000,D2
-           BEQ       MV_B_SZ
+           CMP.W     #$1000,D2       * Byte if size bits are 01
+           BEQ       OP_B_SZ
 
-           CMP.W     #$2000,D2
-           BEQ       MV_L_SZ
+           CMP.W     #$2000,D2       * Byte if size bits are 11
+           BEQ       OP_L_SZ
 
-           CMP.W     #$3000,D2
-           BEQ       MV_W_SZ
+           CMP.W     #$3000,D2       * Byte if size bits are 10
+           BEQ       OP_W_SZ
 
-           MOVE.W    #-5,SIZE_OP     * Something invalid
+           BRA       SZ_INVLD
+
+*********  THESE LINES BELOW CAN PROBABLY BE DELETED
+**MV_B_SZ    MOVE.W    #0,SIZE_OP
+**           LEA       STR_BYTE,A6
+**           RTS
+**MV_W_SZ    MOVE.W    #1,SIZE_OP
+**           LEA       STR_WORD,A6
+**           RTS
+**MV_L_SZ    MOVE.W    #2,SIZE_OP
+**           LEA       STR_LONG,A6
+**           RTS
+
+*******************************************************************************
+******************** Get size of most ops *************************************
+GET_OP_SZ  MOVE.W    MASK_6_7,D2
+           AND.W     D1,D2
+           CMP.W     #$0000,D2       * Byte if size bits are 00
+           BEQ       OP_B_SZ
+
+           CMP.W     #$0040,D2       * Byte if size bits are 01
+           BEQ       OP_L_SZ
+
+           CMP.W     #$0080,D2       * Byte if size bits are 10
+           BEQ       OP_W_SZ
+
+SZ_INVLD   MOVE.W    #-5,SIZE_OP     * Something invalid
 *           RTS
-           ADDQ      #4,A7           * DANGER ZONE! 
+           ADDQ      #4,A7           * DANGER ZONE!
            BRA       INVALID_OP
 
-MV_B_SZ    MOVE.W    #0,SIZE_OP
-           LEA       STR_BYTE,A6
+OP_B_SZ    MOVE.W    #0,SIZE_OP      * Load size flag for API call later
+           LEA       STR_BYTE,A6     * Load str representation for byte
            RTS
-MV_W_SZ    MOVE.W    #1,SIZE_OP
-           LEA       STR_WORD,A6
+OP_W_SZ    MOVE.W    #1,SIZE_OP      * Load size flag for API call later
+           LEA       STR_WORD,A6     * Load str representation for word
            RTS
-MV_L_SZ    MOVE.W    #2,SIZE_OP
-           LEA       STR_LONG,A6
+OP_L_SZ    MOVE.W    #2,SIZE_OP      * Load size flag for API call later
+           LEA       STR_LONG,A6     * Load str representation for long
            RTS
+
+*******************************************************************************
+******************** Get size of single flag ops, where flag is in D6 *********
+SINGLE_SZ  NOP
 
 *******************************************************************************
 ******************** Write a null-term string to buff *************************
