@@ -31,6 +31,8 @@ OP_TREE_C  MOVE      #0,CCR          * Clear condition register
 *******************************************************************************
 ******************* Read opcode ***********************************************
 READ_OP    MOVE.W    (A0)+,D1        * Read opcode into D1
+           MOVE.W    D1,ORIG_OP
+           MOVE.L    A2,START_BUFF
            RTS
 
 *******************************************************************************
@@ -52,7 +54,7 @@ O_RTS      LEA       STR_RTS,A6      * Load RTS string into A6
 *******************************************************************************
 *******************************************************************************
 ** START DECISION TREE, Available opcodes:
-**  ORI BCLR CMPI MOVEA MOVE NEG NOP RTS JSR MOVEM LEA SUBQ BRA BCS BVC BGE BLT
+**  ORI BCLR CMPI MOVEA MOVE NEG JSR MOVEM LEA SUBQ BRA BCS BVC BGE BLT
 **  DIVS OR SUB CMP EOR MULS ADD ADDA LSR ASR ROR LSL ASL ROL
 *******************************************************************************
 *******************************************************************************
@@ -66,7 +68,7 @@ OP_TREE    BTST      #15,D1         * Test MSB in opcode
            ** BRA BCS BVC BGE BLT
            BTST      #13,D1         * Test MSB in opcode
            BNE       BRANCHZ
-           ** NEG NOP RTS JSR MOVEM LEA SUBQ
+           ** NEG JSR MOVEM LEA SUBQ
            NOP
 
  ******************************************************************************
@@ -136,7 +138,11 @@ BRANCHZ    NOP
 ********** Opcode specific processing begin ***********************************
 *******************************************************************************
 ********** ORI ****************************************************************
-O_ORI      NOP
+O_ORI      MOVE.B    #1,EA_FLAG      * Load flag for EA
+           LEA       STR_ORI,A6      * Load ORI string into A6
+           JSR       WRITE_ANY
+           LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY
 
 *******************************************************************************
 ********** BCLR ****************************************************************
@@ -152,15 +158,24 @@ O_BCLR_2   NOP
 
 *******************************************************************************
 ********** MOVEA ***************************************************************
-O_MOVEA    NOP
+O_MOVEA    MOVE.B    #0,EA_FLAG      * Load flag for EA
+           LEA       STR_MOVEA,A6    * Load MOVEA string into A6
+           JSR       WRITE_ANY
+           LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY
+           JSR       GET_MV_SZ
+           CMP.B     #0,SIZE_OP      * MOVEA cannot be a byte
+           BEQ       INVALID_OP
+           JSR       WRITE_ANY
+           BRA       PREP_EA
 
 
 *******************************************************************************
 ********** MOVE ***************************************************************
 O_MOVE     MOVE.B    #0,EA_FLAG      * Load flag for EA
-           LEA       STR_MOVE,A6      * Load NOP string into A6
+           LEA       STR_MOVE,A6     * Load MOVE string into A6
            JSR       WRITE_ANY
-           LEA       STR_PERI,A6      * Load NOP string into A6
+           LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY
            JSR       GET_MV_SZ
            JSR       WRITE_ANY
@@ -293,16 +308,21 @@ O_ROL      NOP
 
 *******************************************************************************
 ******************** Prepare for Call to Saam *********************************
-PREP_EA    MOVE.W    EA_FLAG,D2
+PREP_EA    JSR       SPACE_FILL
+           MOVE.W    EA_FLAG,D2
            MOVE.W    ORIG_OP,D3
            MOVE.W    SIZE_OP,D4
            MOVE.W    #0,D0
-           *JSR       EA_START
+           JSR       START_EA
            BRA       PREP_RET
 
 *******************************************************************************
 ******************** Prepare for return to IO *********************************
 PREP_RET   RTS
+
+*******************************************************************************
+******************** Invalid opcode handling **********************************
+INVALID_OP RTS
 
 *******************************************************************************
 ******************** Write opcode with no size ********************************
@@ -312,6 +332,18 @@ W_NO_SIZE  JSR       WRITE_ANY
 *******************************************************************************
 ******************** Get Size *************************************************
 GET_SIZE   NOP
+
+*******************************************************************************
+******************** Fill with whitespace *************************************
+SPACE_FILL LEA       STR_SPACE,A6   * Load whitespace into A6
+           MOVE.L    START_BUFF,D0  * Load starting address of buffer into D0
+           SUB.L     A2,D0          * Loads difference into D0
+           NEG.L     D0
+           SUBQ      #1,D0
+SPACE_LOOP JSR       WRITE_ANY
+           MOVE      #0,CCR
+           DBEQ      D0,SPACE_LOOP  * Compare is D0 > 0?
+SPACE_DONE RTS
 
 *******************************************************************************
 ******************** Get MOVE size ********************************************
@@ -350,6 +382,7 @@ END_THOM   MOVE.B    #9,D0          * Break out of sim
 
 *******************************************************************************
 ******************** API variable storage *************************************
+START_BUFF DC.L      $0
 ORIG_OP    DC.W      $0
 EA_FLAG    DC.W      $0
 SIZE_OP    DC.W      $0
@@ -374,11 +407,14 @@ INVAL_FLG  DC.B      '!','!','!','!',0
 STR_NOP    DC.B      'N','O','P',' ',0
 STR_RTS    DC.B      'R','T','S',' ',0
 STR_MOVE   DC.B      'MOVE',0
+STR_MOVEA  DC.B      'MOVEA',0
+STR_ORI    DC.B      'ORI',0
 
 STR_PERI   DC.B      '.',0
-STR_BYTE   DC.B      'B    ',0
-STR_WORD   DC.B      'W    ',0
-STR_LONG   DC.B      'L    ',0
+STR_SPACE  DC.B      ' ',0
+STR_BYTE   DC.B      'B',0
+STR_WORD   DC.B      'W',0
+STR_LONG   DC.B      'L',0
 
 ******************** Test variables *******************************************
 TEST_A0    DC.L      TEST_OP
@@ -388,10 +424,10 @@ TEST_A0    DC.L      TEST_OP
 TEST_OP    DC.W      $3200        * MOVE.W D0,D1
 
 TEST_FLAG  DC.W      $0
-TEST_BUFF  DC.B      00,00,00,00
+TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
+           INCLUDE   tester_eamodes_SaamAmiri.x68
 
-           INCLUDE    eamodes_SaamAmiri.x68
            END       START                    * last line of source
 
 *~Font name~Courier~
