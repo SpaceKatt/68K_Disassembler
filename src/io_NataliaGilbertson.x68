@@ -66,6 +66,8 @@ START:                              * first instruction of program
             MOVE.L  #0,A6
 
             *Set output buffer to A2
+            LEA     OutputBuffer,A2
+            
        
             STOP    #3000
 
@@ -77,17 +79,6 @@ ThrowInputError     LEA       InvalidInputError,A1
 
 END                 MOVE.B    #9,D0          * Break out of sim
                     TRAP      #15
-
-*******************************************************************************
-******************** Put variables and constants here *************************
-                        
-PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0    
-PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
-InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
-StoreInputStartAddr     DC.L    0   *Each address needs 8 bytes to be read into memory 
-StoreInputStartAddr2    DC.L    0   
-StoreInputEndAddr       DC.L    0
-StoreInputEndAddr2      DC.L    0
 
 *******************************************************************************
 ******************** Put methods here *****************************************
@@ -142,6 +133,18 @@ doNotShiftThisTime      BRA     TITARloop1
                         
 endTITARloop1           MOVE.L D7,A6
                         RTS
+                        
+*******************************************************************************
+******************** Put variables and constants here *************************
+                        
+PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0    
+PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
+InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
+StoreInputStartAddr     DC.L    0   *Each address needs 8 bytes to be read into memory 
+StoreInputStartAddr2    DC.L    0   
+StoreInputEndAddr       DC.L    0
+StoreInputEndAddr2      DC.L    0
+OutputBuffer            DC.L    0
                         
 *******************************************************************************
 *******************************************************************************
