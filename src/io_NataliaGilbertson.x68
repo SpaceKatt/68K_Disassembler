@@ -5,14 +5,16 @@
 * Description: Disassembler I/O code
 *-----------------------------------------------------------
 
-CR         EQU       $0D            * Carriage return
-LF         EQU       $0A            * Line feed
-Stack      EQU       $8000
+CR              EQU       $0D   * Carriage return
+LF              EQU       $0A   * Line feed
+Stack           EQU       $8000 *the stack grows backwards
+UserTypesENTER  EQU       $8002 
+PageOfOutput    EQU       80  
 
            ORG       $1000
 START:                              * first instruction of program
 ******************** Start*****************************************************
-            LEA     Stack,SP
+            LEA     Stack,SP 
             
             LEA     PromptStartAddr,A1      *Load prompt to print
             MOVE.B  #14,D0                  *Print string at A1 to console
@@ -67,7 +69,33 @@ START:                              * first instruction of program
 
             *Set output buffer to A2
             LEA     OutputBuffer,A2
+            *Use A3 to check for user pressing ENTER
+            *(A3), which is set to FF will change to 00 if the user
+            *   presses ENTER, and the trap task will store in D1 that
+            *   no characters were read in when reading a string
+            MOVEA.L UserTypesEnter,A4
+           
+            *always have trap task 2 in D0 for reading in strings
+            MOVE.B  #2,D0
             
+            *while memory pointer < ending address
+loop1       CMP.L   A3,A0   
+            BLE     continue    *continue if memory pointer < ending address
+            CMP.L   #0,D2       *D2 counts how many lines of output are buffered    
+            BEQ     endloop1    *OR if NOT memptr < endAddr, continue if number of
+                                *   buffered output lines is > 0
+continue            CMP.L   A3,A0
+                    BGT     waitToReadENTER
+                    CMP.B   #PageOfOutput,D2    *check if 80 == D2
+                    BNE     skipReadingENTER
+                    
+waitToReadENTER     TRAP    #15     *after this JSR to output the buffer?
+                    MOVE.L  #0,D2
+skipReadingENTER    ADDA    #2,A0
+                    ADD.B   #1,D2
+            
+                    BRA     loop1
+endloop1                
        
             STOP    #3000
 
@@ -149,6 +177,7 @@ OutputBuffer            DC.L    0
 *******************************************************************************
 *******************************************************************************
     END    START                    * last line of source
+
 
 
 *~Font name~Courier~
