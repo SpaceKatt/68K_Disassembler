@@ -11,8 +11,8 @@ LF         EQU     $0A            * Line feed
          ORG       $1000
 START:                             * first instruction of program
   LEA     STACK,SP
-  MOVE.B  #$0,D2
-  MOVE.W  #$3200,D3
+  MOVE.B  #$8,D2
+  MOVE.W  #$3300,D3
   JSR     START_EA
  
   SIMHALT
@@ -73,14 +73,26 @@ bin0 * 12 bit
  
   JSR     mode_test         *
              
-  RTS                       *to OPCODER
+  RTS                       *return to OPCODER
 
 bin1 * 6 bit
   JSR     mode_test
-  RTS                      *RTS to OPCODER
+  RTS                       *return to OPCODER
   
-bin2 * 9 bit Address
+bin2 * 9 bit Data
+  JSR     mode_test
 
+  LEA     STR_COMMA,A6      * load  ,
+  JSR     write_str         * write , to buff
+  LEA     STR_D,A6          * load  D
+  JSR     write_str         * write D to buff
+
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  MOVE.W  #$0007,D5         * bitmask all except 3 LSB
+  AND.W   D5,D3             * keep only 3 LSB
+  JSR     reg_sum           * sum reg bits
+  RTS                       *return to OPCODER  
 bin3 * 9 bit Data w/Direction
 
 bin4 * 8 bit branch displacment
@@ -91,8 +103,20 @@ bin6 * SUBQ (special case)
 
 bin7 * MOVEM (6 bit w/Direction)
 
-bin8 * 9 bit Data
+bin8 * 9 bit Address
+  JSR     mode_test
 
+  LEA     STR_COMMA,A6      * load  ,
+  JSR     write_str         * write , to buff
+  LEA     STR_A,A6          * load  A
+  JSR     write_str         * write A to buff
+
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  MOVE.W  #$0007,D5         * bitmask all except 3 LSB
+  AND.W   D5,D3             * keep only 3 LSB
+  JSR     reg_sum           * sum reg bits
+  RTS                       * return to OPCODER  
 bin9 * BCLR w/immediate
   
   
@@ -172,15 +196,15 @@ mode000 * Dn
 
 *Function that sums up the register returns to mode_test
 reg_sum
-  MOVE.W  #$0007,D6 * bitmask keep 3 LSB
-  AND.W   D3,D6     * store D3 bitmasked bits to D6
-  MOVEA.W D6,A5     * prepare for index
-  MOVE.B  (SUMTABLE,A5),(A2)+ *store ascii at index to goodbuff 
-  RTS               *return to caller
+  MOVE.W     #$0007,D6          * bitmask keep 3 LSB
+  AND.W      D3,D6              * store D3 bitmasked bits to D6
+  MOVEA.W    D6,A5              * prepare for index
+  MOVE.B    (SUMTABLE,A5),(A2)+ *store ascii at index to goodbuff 
+  RTS                           *return to caller
 
 *Function write string to the buffer
 write_str  
-  CMPI.B    #0,(A6)        * Is the byte at A6 the NULL Char?
+  CMPI.B    #0,(A6)             * Is the byte at A6 the NULL Char?
   BEQ       write_done
   MOVE.B    (A6)+,(A2)+
   BRA       write_str
