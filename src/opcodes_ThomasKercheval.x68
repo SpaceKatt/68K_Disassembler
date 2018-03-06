@@ -234,7 +234,7 @@ BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 *******************************************************************************
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 ********** ORI ****************************************************************
-O_ORI      MOVE.B    #1,EA_FLAG      * Load flag for EA
+O_ORI      MOVE.W    #1,EA_FLAG      * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -245,7 +245,7 @@ O_ORI      MOVE.B    #1,EA_FLAG      * Load flag for EA
 O_BCLR     BTST      #8,D1           * Delineate between versions of BCLR
            BEQ       O_BCLR_2        * "Weird" BCLR
 
-           MOVE.B    #2,EA_FLAG      * Load flag for EA
+           MOVE.W    #2,EA_FLAG      * Load flag for EA
 WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
            JSR       WRITE_ANY
            
@@ -253,13 +253,13 @@ WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
 
 *******************************************************************************
 ********** BCLR version 2 *****************************************************
-O_BCLR_2   MOVE.B    #9,EA_FLAG      * Load flag for EA
+O_BCLR_2   MOVE.W    #9,EA_FLAG      * Load flag for EA
 
            BRA       WR_BCLR         * Everything other than EA flag is same
 
 *******************************************************************************
 ********** CMPI ***************************************************************
-O_CMPI     MOVE.B    #1,EA_FLAG      * Load flag for EA
+O_CMPI     MOVE.W    #1,EA_FLAG      * Load flag for EA
            LEA       STR_CMPI,A6      * Load ORI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -267,7 +267,7 @@ O_CMPI     MOVE.B    #1,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** MOVEA **************************************************************
-O_MOVEA    MOVE.B    #0,EA_FLAG      * Load flag for EA
+O_MOVEA    MOVE.W    #0,EA_FLAG      * Load flag for EA
            LEA       STR_MOVEA,A6    * Load MOVEA string into A6
            JSR       WRITE_ANY
 
@@ -283,7 +283,7 @@ O_MOVEA    MOVE.B    #0,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** MOVE ***************************************************************
-O_MOVE     MOVE.B    #0,EA_FLAG      * Load flag for EA
+O_MOVE     MOVE.W    #0,EA_FLAG      * Load flag for EA
            LEA       STR_MOVE,A6     * Load MOVE string into A6
            JSR       WRITE_ANY
 
@@ -433,7 +433,24 @@ NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
 
 *******************************************************************************
 ******************** Prepare for Call to Saam *********************************
-PREP_EA    JSR       SPACE_FILL    * MAYBE CLR ALL REGISTERS?
+PREP_EA    JSR       SPACE_FILL    
+         * CLEAR ALL DATA REGISTERS
+           CLR.L     D0
+           CLR.L     D1
+           CLR.L     D2
+           CLR.L     D3
+           CLR.L     D4
+           CLR.L     D5
+           CLR.L     D6
+           CLR.L     D7
+         * CLEAR NON-API ADDRESS REGISTERS
+           MOVEA.L   #0,A1
+           MOVEA.L   #0,A3
+           MOVEA.L   #0,A4
+           MOVEA.L   #0,A5
+           MOVEA.L   #0,A6
+
+         * LOAD API SPECIFIC REGISTERS
            MOVE.W    EA_FLAG,D2
            MOVE.W    ORIG_OP,D3
            MOVE.W    SIZE_OP,D4
@@ -459,10 +476,10 @@ W_NO_SIZE  JSR       WRITE_ANY
 SPACE_FILL LEA       STR_SPACE,A6    * Load whitespace into A6
            MOVE.L    START_BUFF,D0   * Load starting address of buffer into D0
            SUB.L     A2,D0           * Loads difference into D0
-           NEG.L     D0
-           SUBQ      #1,D0
-SPACE_LOOP JSR       WRITE_ANY
-           MOVE      #0,CCR
+           *NEG.L     D0
+           ADD.W     #$A,D0
+           *MOVE      #0,CCR
+SPACE_LOOP MOVE.B    (A6),(A2)+
            DBEQ      D0,SPACE_LOOP   * Compare is D0 > 0?
 SPACE_DONE RTS
 
@@ -541,7 +558,7 @@ END_THOM   MOVE.B    #9,D0           * Break out of sim
 ******************** API variable storage *************************************
 START_BUFF DC.L      $0
 ORIG_OP    DC.W      $0
-EA_FLAG    DC.W      $0
+EA_FLAG    DC.W      -1
 SIZE_OP    DC.W      $0
 API_A0     DC.W      $0
 API_A2     DC.W      $0
@@ -604,7 +621,9 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $4E71       * NOP
 *TEST_OP    DC.W      $4E75        * RTS
 *TEST_OP    DC.W      $8200        * OR D0,D0
-TEST_OP    DC.W      $3200        * MOVE.W D0,D1
+*TEST_OP    DC.W      $3200        * MOVE.W D0,D1
+TEST_OP    DC.W      $0880        * BCLR  #15,D0
+*TEST_OP    DC.W      $0380        * BCLR  D1,D0
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
