@@ -11,6 +11,8 @@ LF         EQU     $0A            * Line feed
          ORG       $1000
 START:                             * first instruction of program
   LEA     STACK,SP
+  MOVE.B  #$0,D2
+  MOVE.W  #$3200,D3
   JSR     START_EA
  
   SIMHALT
@@ -47,29 +49,30 @@ START_EA                           *OPCODE coming in
   CMP     #9,D2
   BEQ     bin9
   
-  BRA  END * D2 not set to proper EA Flag
+  BRA     END * D2 not set to proper EA Flag
   
     
 bin0 * 12 bit      
-  MOVE.W  D3,D7             * save D3 to restore
+  JSR     mode_test         * tests source mode/reg
+  
+  LEA     STR_COMMA,A6      * load  ,
+  JSR     write_any         * write , to buff
+
   MOVE.W  D3,D6             * temp D3
   
-  LSR.W   #$8,D3            * shift source reg to dest reg index
+  LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
   AND.W   D5,D3             * keep only 3 LSB
 
-  LSR.W   #$3,D6            * shift source mode to dest mode index
+  LSR.W   #$3,D6            * shift dest mode to source mode index
   MOVE.W  #$0038,D5         * bitmask all except 5,4,3 bit index
   AND.W   D5,D6             * keep only above 5,4,3 bits
   
   ADD.W   D6,D3             * combine reg and mode bits  
  
-  JSR     mode_test
-  MOVE.W  D7,D3             * restore D3
-  LEA     STR_COMMA,A6      * load  ,
-  JSR     write_any         * write , to buff
-  JSR     mode_test             
+  JSR     mode_test         *
+             
   RTS                       *to OPCODER
 
 bin1 * 6 bit
@@ -154,16 +157,16 @@ mode010 * (An)
   JSR    write_any          * write ) to buff
   RTS                       * return to bin
 
-mode001 * Dn
-  LEA    STR_D,A6           * load  D
-  JSR    write_any          * write D to buff 
+mode001 * An
+  LEA    STR_A,A6           * load  A
+  JSR    write_any          * write A to buff 
   JSR    reg_sum            * sum reg, write to buff
   RTS                       * return to bin
 
 
-mode000 * An
-  LEA    STR_A,A6           * load  A
-  JSR    write_any          * write A to buff 
+mode000 * Dn
+  LEA    STR_D,A6           * load  D
+  JSR    write_any          * write D to buff 
   JSR    reg_sum            * sum reg, write to buff
   RTS                       * return to bin 
 
