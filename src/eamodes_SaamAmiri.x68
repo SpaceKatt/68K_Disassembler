@@ -9,47 +9,51 @@ CR         EQU     $0D            * Carriage return
 LF         EQU     $0A            * Line feed
 
          ORG       $1000
-START:                              * first instruction of program
-
-  LEA STACK,SP
-
-  CMP #0,D2
-  BEQ bin0
-
-  CMP #1,D2
-  BEQ bin1
+START:                             * first instruction of program
+  LEA     STACK,SP
+  JSR     START_EA
+ 
+  SIMHALT
   
-  CMP #2,D2
-  BEQ bin2  
+START_EA                           *OPCODE coming in
+
+  CMP     #0,D2
+  BEQ     bin0
+
+  CMP     #1,D2
+  BEQ     bin1
   
-  CMP #3,D2
-  BEQ bin3
+  CMP     #2,D2
+  BEQ     bin2  
   
-  CMP #4,D2
-  BEQ bin4
+  CMP     #3,D2
+  BEQ     bin3
+  
+  CMP     #4,D2
+  BEQ     bin4
     
-  CMP #5,D2
-  BEQ bin5
+  CMP     #5,D2
+  BEQ     bin5
     
-  CMP #6,D2
-  BEQ bin6
+  CMP     #6,D2
+  BEQ     bin6
     
-  CMP #7,D2
-  BEQ bin7
+  CMP     #7,D2
+  BEQ     bin7
 
-  CMP #8,D2
-  BEQ bin8
+  CMP     #8,D2
+  BEQ     bin8
   
-  CMP #9,D2
-  BEQ bin9
+  CMP     #9,D2
+  BEQ     bin9
   
   BRA  END * D2 not set to proper EA Flag
   
     
 bin0 * 12 bit      
   MOVE.W  D3,D7             * save D3 to restore
-
   MOVE.W  D3,D6             * temp D3
+  
   LSR.W   #$8,D3            * shift source reg to dest reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
@@ -66,11 +70,11 @@ bin0 * 12 bit
   LEA     STR_COMMA,A6      * load  ,
   JSR     write_any         * write , to buff
   JSR     mode_test             
-  SIMHALT *RTS to OPCODER
+  RTS                       *to OPCODER
 
 bin1 * 6 bit
-  JSR   mode_test
-  SIMHALT                   *RTS to OPCODER
+  JSR     mode_test
+  RTS                      *RTS to OPCODER
   
 bin2 * 9 bit Address
 
@@ -111,6 +115,7 @@ mode0
   
 mode11                      * assume mode 11->111
   *test register for (xxx).W,(xxx).L,#imm
+  
 
 mode10                      * assume if mode 10->100= -(An)
   LEA    STR_DECA,A6        * load  -(A
@@ -178,6 +183,7 @@ write_any
   BRA       write_any
 w_done      RTS
  
+
 END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
@@ -194,6 +200,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 
