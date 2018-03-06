@@ -25,6 +25,14 @@ START:                              * first instruction of program
              
             JSR     ValidAddressChars       *check if starting address is valid
             
+            LEA     StoreInputStartAddr,A4  *Now convert input into hex addresses
+            JSR     TranslateInputToAddrReg
+            
+            MOVE.L  A6,D6
+            BTST.L  #0,D6                   *check that the address is on a word boundary
+            BNE     ThrowInputError
+            MOVEA.L A6,A0
+            
             LEA     PromptEndAdder,A1       *Load prompt to print
             MOVE.B  #14,D0                  *Print string at A1 to console
             TRAP    #15
@@ -33,25 +41,18 @@ START:                              * first instruction of program
             MOVE.B  #2,D0                   *Read string from keyboard into (A1)
             TRAP    #15                     *length of string is stored at D1
             
-            MOVE.B  D7,D0                   *Store startAddr length at D0
-            
             JSR     ValidAddressChars       *check if ending address is valid
   
-            *Now convert input into hex addresses
-            *Store pointer to next opcode in A0
-            *Store ending address at A3
-            
-            *D1 currently holds EndAddr's charLength
-            LEA     StoreInputEndAddr,A4
-            JSR     TranslateInputToAddrReg
-            MOVEA.L A0,A3
-            MOVEA.L #0,A0
-            
-            *Now put StartAddr's charLength into D1
-            MOVE.B  D0,D1                   *get startAddr length into D1
-            LEA     StoreInputStartAddr,A4
+            LEA     StoreInputEndAddr,A4    *Now convert input into hex addresses
             JSR     TranslateInputToAddrReg
             
+            MOVE.L  A6,D6
+            BTST.L  #0,D6                   *check that the address is on a word boundary
+            BNE     ThrowInputError
+            MOVEA.L A6,A3
+  
+            *Pointer to next opcode is in A0
+            *Ending address is at A3
             
             *Clear data registers
             CLR.L   D0
@@ -62,9 +63,8 @@ START:                              * first instruction of program
             MOVE.L  #0,A1
             MOVE.L  #0,A4
             MOVE.L  #0,A5
-            *A0 holds pointer to next opcode (ptno)
-            *A3 holds the ending address of instructions to disassemble
-            
+            MOVE.L  #0,A6
+
             *Set output buffer to A2
        
             STOP    #3000
@@ -83,7 +83,7 @@ END                 MOVE.B    #9,D0          * Break out of sim
                         
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0    
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
-InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long',CR,LF,'and containing only digits 0-9 and characters A-F.',0        
+InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
 StoreInputStartAddr     DC.L    0   *Each address needs 8 bytes to be read into memory 
 StoreInputStartAddr2    DC.L    0   
 StoreInputEndAddr       DC.L    0
@@ -110,6 +110,8 @@ VACloop                 CMP.B   D1,D3           *D3 is loop counter
                         BEQ     ThrowInputError
                         ADDQ    #1,D3           *increment counter
                         BRA     VACloop
+                        
+                        *Check that the address is at a word boundary
                         
                         
 endMethodVAC            MOVE.L  #0,D3           *clear out counter data reg
@@ -138,12 +140,13 @@ digitBt0And9            ADD.B   (A4),D7
                         LSL.L   #$04,D7 
 doNotShiftThisTime      BRA     TITARloop1
                         
-endTITARloop1           MOVE.L D7,A0
+endTITARloop1           MOVE.L D7,A6
                         RTS
                         
 *******************************************************************************
 *******************************************************************************
     END    START                    * last line of source
+
 
 *~Font name~Courier~
 *~Font size~10~
