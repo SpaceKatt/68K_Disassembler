@@ -56,7 +56,7 @@ bin0 * 12 bit
   JSR     mode_test         * tests source mode/reg
   
   LEA     STR_COMMA,A6      * load  ,
-  JSR     write_any         * write , to buff
+  JSR     write_str         * write , to buff
 
   MOVE.W  D3,D6             * temp D3
   
@@ -122,10 +122,10 @@ mode11                      * assume mode 11->111
 
 mode10                      * assume if mode 10->100= -(An)
   LEA    STR_DECA,A6        * load  -(A
-  JSR    write_any          * write -(A to buff
+  JSR    write_str          * write -(A to buff
   JSR    reg_sum            * sum reg, write to buff
   LEA    STR_CP,A6          * load  ) 
-  JSR    write_any          * write ) to buff
+  JSR    write_str          * write ) to buff
   RTS                       * return to bin
   * prep for caller
 mode01
@@ -142,31 +142,31 @@ mode00
    
 mode011 * (An)+
   LEA    STR_INDA,A6        * load  (A
-  JSR    write_any          * write (A to buff 
+  JSR    write_str          * write (A to buff 
   JSR    reg_sum            * sum reg, write to buff
   LEA    STR_CPINC,A6       * load  )+
-  JSR    write_any          * write )+ to buff
+  JSR    write_str          * write )+ to buff
   RTS                       * return to bin
 
     
 mode010 * (An)
   LEA    STR_INDA,A6        * load  (A
-  JSR    write_any          * write (A to buff 
+  JSR    write_str          * write (A to buff 
   JSR    reg_sum            * sum reg, write to buff
   LEA    STR_CP,A6          * load  )
-  JSR    write_any          * write ) to buff
+  JSR    write_str          * write ) to buff
   RTS                       * return to bin
 
 mode001 * An
   LEA    STR_A,A6           * load  A
-  JSR    write_any          * write A to buff 
+  JSR    write_str          * write A to buff 
   JSR    reg_sum            * sum reg, write to buff
   RTS                       * return to bin
 
 
 mode000 * Dn
   LEA    STR_D,A6           * load  D
-  JSR    write_any          * write D to buff 
+  JSR    write_str          * write D to buff 
   JSR    reg_sum            * sum reg, write to buff
   RTS                       * return to bin 
 
@@ -179,12 +179,12 @@ reg_sum
   RTS               *return to caller
 
 *Function write string to the buffer
-write_any  
+write_str  
   CMPI.B    #0,(A6)        * Is the byte at A6 the NULL Char?
-  BEQ       w_done
+  BEQ       write_done
   MOVE.B    (A6)+,(A2)+
-  BRA       write_any
-w_done      RTS
+  BRA       write_str
+write_done  RTS
  
 
 END      SIMHALT
