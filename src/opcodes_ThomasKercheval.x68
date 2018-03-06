@@ -5,12 +5,12 @@
 * Description : 68K Disassembler Opcode Module
 *-----------------------------------------------------------
 
-CR         EQU       $0D            * Carriage return
-LF         EQU       $0A            * Line feed
+CR         EQU       $0D             * Carriage return
+LF         EQU       $0A             * Line feed
 STACKPTRE  EQU       $8000
 
            ORG       $1000
-START:                              * first instruction of program
+START:                               * first instruction of program
 ******************** Start*****************************************************
 TEST_START LEA       STACKPTRE,SP
            LEA       TEST_OP,A0
@@ -58,79 +58,122 @@ O_RTS      LEA       STR_RTS,A6      * Load RTS string into A6
 **  DIVS OR SUB CMP EOR MULS ADD ADDA LSR ASR ROR LSL ASL ROL
 *******************************************************************************
 *******************************************************************************
-OP_TREE    BTST      #15,D1         * Test MSB in opcode
+OP_TREE    BTST      #15,D1          * Test MSB in opcode
            BNE       ONE
 
            ** ORI BCLR CMPI MOVEA MOVE
            ** NEG JSR MOVEM LEA SUBQ BRA BCS BVC BGE BLT
-           BTST      #14,D1         * Test second most sig bit in opcode
-           BEQ       Z_ONE          * ORI BCLR CMPI MOVEA MOVE
+           BTST      #14,D1          * Test second most sig bit in opcode
+           BEQ       Z_ONE           * ORI BCLR CMPI MOVEA MOVE
 
-           ** NEG JSR MOVEM LEA SUBQ
+           ** NEG JSR MOVEM LEA SUBQ 
            ** BRA BCS BVC BGE BLT
-           BTST      #13,D1         * Test third MSB in opcode
-           BNE       BRANCHZ        * BRA BCS BVC BGE BLT
+           BTST      #13,D1          * Test third MSB in opcode
+           BNE       BRANCHZ         * BRA BCS BVC BGE BLT
 
-           ** NEG JSR MOVEM LEA SUBQ
-           BTST      #12,D1         * Test fourth MSB in opcode
+           ** NEG JSR MOVEM LEA SUBQ 
+           BTST      #12,D1          * Test fourth MSB in opcode
            BEQ       O_SUBQ
 
            MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            AND.W     D1,D2           * MASK bits
-           EORI.W    #$0400,D2       * Will be zero if 8-11 are 0100
+           CMPI.W    #$0400,D2       * Will be zero if 8-11 are 0100
            BEQ       O_NEG
 
-           MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
-           AND.W     D1,D2           * MASK bits
-           EORI.W    #$0400,D2       * Will be zero if 8-11 are 1110
+           CMPI.W    #$0400,D2       * Will be zero if 8-11 are 1110
            BEQ       O_JSR
 
-           MOVE.W    MASK_6_8,D2    * Load mask for bits 8-11
+           MOVE.W    MASK_6_8,D2     * Load mask for bits 8-11
            AND.W     D1,D2           * MASK bits
-           EORI.W    #$01C0,D2       * Will be zero if 6-8 are 111
+           CMPI.W    #$01C0,D2       * Will be zero if 6-8 are 111
            BEQ       O_LEA
 
            BRA       O_MOVEM         * Else, we have MOVEM
-
 
  ******************************************************************************
  *  DIVS OR SUB CMP EOR
  *  MULS ADD ADDA LSR ASR ROR LSL ASL ROL
  ******************************************************************************
-ONE        BTST      #14,D1         * Test second most sig bit in opcode
+ONE        BTST      #14,D1          * Test second most sig bit in opcode
            BNE       O_ZERO
 
            **  MULS ADD ADDA
            **  LSR ASR ROR LSL ASL ROL
-           BTST      #13,D1         * Test third most sig
-           BNE       ROTATEZ        *  LSR ASR ROR LSL ASL ROL
+           BTST      #13,D1          * Test third most sig
+           BNE       ROTATEZ         *  LSR ASR ROR LSL ASL ROL
 
            **  MULS ADD ADDA
            BTST      #12,D1
-           BNE       O_MULS         * Identified MULS op
+           BNE       O_MULS          * Identified MULS op
 
-           MOVE.W    MASK_6_7,D2    * Load mask for bits 6-7
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$00C0,D2      * Will be zero if 6-7 are 11
-           BEQ       O_ADDA         * ADDA
+           MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
+           AND.W     D1,D2           * MASK bits
+           CMPI.W    #$00C0,D2       * Will be zero if 6-7 are 11
+           BEQ       O_ADDA          * ADDA
 
-           BRA       O_ADD          * ADD
+           BRA       O_ADD           * ADD
 
  ******************************************************************************
  *  DIVS OR SUB
  *  CMP EOR
  ******************************************************************************
-O_ZERO     NOP ** CHANGE decision tree to give DIVS OR SUB their own branch
+O_ZERO     BTST      #13,D1          * Test third MSB
+           BEQ       O_Z_ZERO        * DIVS OR SUB
+
+           **  CMP EOR
+           BTST      #8,D1           * This is pretty obvious
+           BEQ       O_EOR
+
+           BRA       O_CMP
 
  ******************************************************************************
  *  DIVS OR SUB
  ******************************************************************************
-O_Z_ZERO   NOP * TODO
+O_Z_ZERO   BTST      #12,D1          * Test fourth MSB
+           BEQ       O_SUB
 
+           MOVE.W    MASK_6_8,D2     * Load mask for bits 8-11
+           AND.W     D1,D2           * MASK bits
+           CMPI.W    #$01C0,D2       * Will be zero if 6-8 are 111
+           BEQ       O_DIVS
+
+           BRA       O_OR
  ******************************************************************************
  *  LSR ASR ROR LSL ASL ROL
  ******************************************************************************
-ROTATEZ    NOP * TODO
+ROTATEZ    BTST      #8,D1           * Determines direction
+           BEQ       GO_RIGHT
+           MOVE.W    #0,D7           * Lets say 0 is R and 1 is left
+           BRA       CONT_ROTZ
+GO_RIGHT   MOVE.W    #1,D7           * Lets say 0 is R and 1 is left
+
+CONT_ROTZ  MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
+           AND.W     D1,D2           * Mask bits 6-7
+           CMP.W     #$00C0,D2       * Sets Z to 1 if equal
+           BEQ       NORM_ROTZ
+
+           MOVE.W    #5,EA_FLAG      * "weird" rotation
+           MOVE.W    #$0030,D2       * Load mask for bits 4-5
+           AND.W     D1,D2           * Mask bits 4-5 or 9-10
+           LSR       #4,D2
+           BRA       COMP_ROTZ
+
+NORM_ROTZ  MOVE.W    #1,EA_FLAG      * Normal 6-EA
+           MOVE.W    #$0600,D2       * Load mask for bits 9-10
+           AND.W     D1,D2           * Mask bits 9-10
+           LSR       #8,D2
+           LSR       #1,D2
+
+COMP_ROTZ  CMPI.W    #$0000,D2       * C set
+           BEQ       O_ASd
+           
+           CMPI.W    #$0001,D2
+           BEQ       O_LSd
+
+           CMPI.W    #$0002,D2
+           BEQ       O_ROd
+
+           BRA       INVALID_OP      * Invalid opcode
 
  ******************************************************************************
  *  ORI BCLR CMPI
@@ -142,56 +185,47 @@ Z_ONE      MOVE.W    MASK_12_15,D2   * Load mask for bits 12-15
            BEQ       Z_ONE_SU
 
            **  MOVEA MOVE
-           MOVE.W    MASK_6_8,D2    * Load mask for bits 6-8
-           AND.W     D1,D2          * MASK bits
-           EOR.W     #$0040,D2      * Will be zero if 6-8 are 001
-           BEQ       O_MOVE         * MOVE
-           BRA       O_MOVEA        * MOVEA
+           MOVE.W    MASK_6_8,D2     * Load mask for bits 6-8
+           AND.W     D1,D2           * MASK bits
+           CMPI.W    #$0040,D2       * Will be zero if 6-8 are 001
+           BEQ       O_MOVE          * MOVE
+
+           BRA       O_MOVEA         * MOVEA
 
  ******************************************************************************
  *  ORI BCLR CMPI
  ******************************************************************************
-Z_ONE_SU   MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0000,D2      * Will be zero if 8-11 are 0000
-           BEQ       O_ORI          * ORI
+Z_ONE_SU   MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
+           AND.W     D1,D2           * MASK bits
+           CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
+           BEQ       O_ORI           * ORI
 
-           MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0C00,D2      * Will be zero if 8-11 are 1100
-           BEQ       O_CMPI         * ORI
+           CMPI.W    #$0C00,D2       * Will be zero if 8-11 are 1100
+           BEQ       O_CMPI          * ORI
 
            BRA       O_BCLR
 
  ******************************************************************************
  * BRA BCS BVC BGE BLT
  ******************************************************************************
-BRANCHZ    MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0000,D2      * Will be zero if 8-11 are 0000
-           BEQ       O_BRA           
+BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
+           AND.W     D1,D2           * MASK bits
+           CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
+           BEQ       O_BRA            
 
-           MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0500,D2      * Will be zero if 8-11 are 0101
-           BEQ       O_BCS           
+           CMPI.W    #$0500,D2       * Will set zero if 8-11 are 0101
+           BEQ       O_BCS            
 
-           MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0800,D2      * Will be zero if 8-11 are 1000
-           BEQ       O_BVC           
+           CMPI.W    #$0800,D2       * Will set zero if 8-11 are 1000
+           BEQ       O_BVC            
 
-           MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0C00,D2      * Will be zero if 8-11 are 1100
-           BEQ       O_BGE           
+           CMPI.W    #$0C00,D2       * Will set zero if 8-11 are 1100
+           BEQ       O_BGE            
 
-           MOVE.W    MASK_8_11,D2   * Load mask for bits 8-11
-           AND.W     D1,D2          * MASK bits
-           EORI.W    #$0D00,D2      * Will be zero if 8-11 are 1101
-           BEQ       O_BLT           
+           CMPI.W    #$0D00,D2       * Will set zero if 8-11 are 1101
+           BEQ       O_BLT            
 
-           BRA       INVALID_OP     * Invalid opcode!
+           BRA       INVALID_OP      * Invalid opcode!
 
 *******************************************************************************
 ********** END Decision tree***************************************************
@@ -224,11 +258,14 @@ O_CMPI     NOP * TODO
 O_MOVEA    MOVE.B    #0,EA_FLAG      * Load flag for EA
            LEA       STR_MOVEA,A6    * Load MOVEA string into A6
            JSR       WRITE_ANY
+
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY
            JSR       GET_MV_SZ
+
            CMP.B     #0,SIZE_OP      * MOVEA cannot be a byte
            BEQ       INVALID_OP
+
            JSR       WRITE_ANY
            BRA       PREP_EA
 
@@ -237,8 +274,10 @@ O_MOVEA    MOVE.B    #0,EA_FLAG      * Load flag for EA
 O_MOVE     MOVE.B    #0,EA_FLAG      * Load flag for EA
            LEA       STR_MOVE,A6     * Load MOVE string into A6
            JSR       WRITE_ANY
+
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY
+
            JSR       GET_MV_SZ
            JSR       WRITE_ANY
            BRA       PREP_EA
@@ -333,34 +372,34 @@ O_ADD      NOP * TODO
 O_ADDA     NOP * TODO
 
 
+********************************************************************************
+*********** LSR ****************************************************************
+**O_LSR      NOP * TODO
+*
+*
+********************************************************************************
+*********** ASR ****************************************************************
+**O_ASR      NOP * TODO
+*
+*
+********************************************************************************
+*********** ROR ****************************************************************
+**O_ROR      NOP * TODO
+*
+*
 *******************************************************************************
-********** LSR ****************************************************************
-O_LSR      NOP * TODO
-
-
-*******************************************************************************
-********** ASR ****************************************************************
-O_ASR      NOP * TODO
-
-
-*******************************************************************************
-********** ROR ****************************************************************
-O_ROR      NOP * TODO
-
-
-*******************************************************************************
-********** LSL ****************************************************************
-O_LSL      NOP * TODO
-
-
-*******************************************************************************
-********** ASL ****************************************************************
-O_ASL      NOP * TODO
+********** LSd ****************************************************************
+O_LSd      NOP * TODO
 
 
 *******************************************************************************
-********** ROL ****************************************************************
-O_ROL      NOP * TODO
+********** ASd ****************************************************************
+O_ASd      NOP * TODO
+
+
+*******************************************************************************
+********** ROd ****************************************************************
+O_ROd      NOP * TODO
 
 
 ********** End opcode specific processing *************************************
@@ -370,7 +409,7 @@ O_ROL      NOP * TODO
 
 *******************************************************************************
 ******************** Prepare for Call to Saam *********************************
-PREP_EA    JSR       SPACE_FILL
+PREP_EA    JSR       SPACE_FILL    * MAYBE CLR ALL REGISTERS?
            MOVE.W    EA_FLAG,D2
            MOVE.W    ORIG_OP,D3
            MOVE.W    SIZE_OP,D4
@@ -397,14 +436,14 @@ GET_SIZE   NOP * TODO
 
 *******************************************************************************
 ******************** Fill with whitespace *************************************
-SPACE_FILL LEA       STR_SPACE,A6   * Load whitespace into A6
-           MOVE.L    START_BUFF,D0  * Load starting address of buffer into D0
-           SUB.L     A2,D0          * Loads difference into D0
+SPACE_FILL LEA       STR_SPACE,A6    * Load whitespace into A6
+           MOVE.L    START_BUFF,D0   * Load starting address of buffer into D0
+           SUB.L     A2,D0           * Loads difference into D0
            NEG.L     D0
            SUBQ      #1,D0
 SPACE_LOOP JSR       WRITE_ANY
            MOVE      #0,CCR
-           DBEQ      D0,SPACE_LOOP  * Compare is D0 > 0?
+           DBEQ      D0,SPACE_LOOP   * Compare is D0 > 0?
 SPACE_DONE RTS
 
 *******************************************************************************
@@ -413,12 +452,18 @@ GET_MV_SZ  MOVE.W    MASK_12_15,D2
            AND.W     D1,D2
            CMP.W     #$1000,D2
            BEQ       MV_B_SZ
+
            CMP.W     #$2000,D2
            BEQ       MV_L_SZ
+
            CMP.W     #$3000,D2
            BEQ       MV_W_SZ
-           MOVE.W    #-5,SIZE_OP
-           RTS
+
+           MOVE.W    #-5,SIZE_OP     * Something invalid
+*           RTS
+           ADDQ      #4,A7           * DANGER ZONE! 
+           BRA       INVALID_OP
+
 MV_B_SZ    MOVE.W    #0,SIZE_OP
            LEA       STR_BYTE,A6
            RTS
@@ -431,7 +476,7 @@ MV_L_SZ    MOVE.W    #2,SIZE_OP
 
 *******************************************************************************
 ******************** Write a null-term string to buff *************************
-WRITE_ANY  CMPI.B    #0,(A6)        * Is the byte at A6 the NULL Char?
+WRITE_ANY  CMPI.B    #0,(A6)         * Is the byte at A6 the NULL Char?
            BEQ       W_DONE
            MOVE.B    (A6)+,(A2)+
            BRA       WRITE_ANY
@@ -439,7 +484,7 @@ W_DONE     RTS
 
 *******************************************************************************
 ******************** Fin ******************************************************
-END_THOM   MOVE.B    #9,D0          * Break out of sim
+END_THOM   MOVE.B    #9,D0           * Break out of sim
            TRAP      #15
 
 *******************************************************************************
@@ -458,46 +503,45 @@ CON_NOP    DC.W      $4E71
 CON_RTS    DC.W      $4E75
 
                      ** MASKS
-MASK_12_15 DC.W      $F000          * Mask for the bits from X to Y for _X_Y
-MASK_8_11  DC.W      $0F00          * Mask for the bits from X to Y for _X_Y
-MASK_6_8   DC.W      $01C0          * Mask for the bits from X to Y for _X_Y
-MASK_6_7   DC.W      $00C0          * Mask for the bits from X to Y for _X_Y
+MASK_12_15 DC.W      $F000           * Mask for the bits from X to Y for _X_Y
+MASK_8_11  DC.W      $0F00           * Mask for the bits from X to Y for _X_Y
+MASK_6_8   DC.W      $01C0           * Mask for the bits from X to Y for _X_Y
+MASK_6_7   DC.W      $00C0           * Mask for the bits from X to Y for _X_Y
 
 
 ******************** Opcode strings *******************************************
-INVAL_FLG  DC.B      '!','!','!','!',0
-STR_NOP    DC.B      'N','O','P',' ',0
-STR_RTS    DC.B      'R','T','S',' ',0
+INVAL_FLG  DC.B      '!!!!',0
+
+STR_NOP    DC.B      'NOP',0
+STR_RTS    DC.B      'RTS',0
 STR_MOVE   DC.B      'MOVE',0
 STR_MOVEA  DC.B      'MOVEA',0
 STR_ORI    DC.B      'ORI',0
 STR_ADD    DC.B      'ADD',0
-STR_ADDA   DC.B      'ADD',0
+STR_ADDA   DC.B      'ADDA',0
 STR_ASL    DC.B      'ASL',0
 STR_ASR    DC.B      'ASR',0
-STR_BCLR   DC.B      'BCL',0
-STR_BCLR   DC.B      'BCL',0
+STR_BCLR   DC.B      'BCLR',0
 STR_BCS    DC.B      'BCS',0
 STR_BGE    DC.B      'BGE',0
 STR_BLT    DC.B      'BLT',0
 STR_BRA    DC.B      'BRA',0
 STR_BVC    DC.B      'BVC',0
 STR_CMP    DC.B      'CMP',0
-STR_CMPI   DC.B      'CMP',0
-STR_DIVS   DC.B      'DIV',0
+STR_CMPI   DC.B      'CMPI',0
+STR_DIVS   DC.B      'DIVS',0
 STR_EOR    DC.B      'EOR',0
 STR_JSR    DC.B      'JSR',0
 STR_LEA    DC.B      'LEA',0
 STR_LSL    DC.B      'LSL',0
 STR_LSR    DC.B      'LSR',0
-STR_MOVE   DC.B      'MOV',0
-STR_MULS   DC.B      'MUL',0
+STR_MULS   DC.B      'MULS',0
 STR_NEG    DC.B      'NEG',0
 STR_OR     DC.B      'OR',0
 STR_ROL    DC.B      'ROL',0
 STR_ROR    DC.B      'ROR',0
 STR_SUB    DC.B      'SUB',0
-STR_SUBQ   DC.B      'SUB',0
+STR_SUBQ   DC.B      'SUBQ',0
 
 STR_PERI   DC.B      '.',0
 STR_SPACE  DC.B      ' ',0
