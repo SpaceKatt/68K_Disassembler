@@ -299,7 +299,7 @@ O_MOVE     MOVE.W    #0,EA_FLAG      * Load flag for EA
 *******************************************************************************
 ********** NEG ****************************************************************
 O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
-           LEA       STR_NEG,A6      * Load ORI string into A6
+           LEA       STR_NEG,A6      * Load NEG string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
            BRA       PREP_EA
@@ -321,13 +321,19 @@ O_LEA      NOP * TODO
 
 *******************************************************************************
 ********** SUBQ ***************************************************************
-O_SUBQ     NOP * TODO
+O_SUBQ     MOVE.W    #6,EA_FLAG      * Load flag for EA
+           LEA       STR_SUBQ,A6     * Load SUBQ string into A6
+           JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** BRA ****************************************************************
-O_BRA      NOP * TODO
+O_BRA      MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       STR_BRA,A6      * Load BRA string into A6
+           JSR       WRITE_ANY
 
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** BCS ****************************************************************
@@ -676,7 +682,9 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $0043        * ORI.W #5,D3
 *TEST_OP    DC.W      $4403        * NEG.B D3
 *TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
-TEST_OP    DC.W      $D485        * ADD.L  D5,D2
+*TEST_OP    DC.W      $D485        * ADD.L  D5,D2
+*TEST_OP    DC.W      $6000        * BRA    <LABEL>
+TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
