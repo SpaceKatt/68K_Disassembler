@@ -327,8 +327,11 @@ O_MOVEM    MOVE.W    #7,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** LEA ****************************************************************
-O_LEA      NOP * TODO
+O_LEA      MOVE.W    #8,EA_FLAG      * Load flag for EA
+           LEA       STR_LEA,A6      * Load LEA string into A6
+           JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
 
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** SUBQ ***************************************************************
@@ -699,7 +702,9 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $D485        * ADD.L  D5,D2
 *TEST_OP    DC.W      $6000        * BRA    <LABEL>
 *TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
-TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
+*TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
+*TEST_OP    DC.W      $49F8        * LEA $1012,A4
+TEST_OP    DC.W      $0884        * BCLR   #4,D4
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
