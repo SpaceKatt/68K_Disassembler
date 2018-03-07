@@ -391,7 +391,11 @@ O_MULS     MOVE.W    #2,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** ADD ****************************************************************
-O_ADD      NOP * TODO
+O_ADD      MOVE.W    #3,EA_FLAG      * Load flag for EA
+           LEA       STR_ADD,A6      * Load ADD string into A6
+           JSR       NORM_OP_FL      * Write op, '.', get size, write size
+
+           BRA       PREP_EA
 
 
 *******************************************************************************
@@ -671,7 +675,8 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $0380        * BCLR  D1,D0
 *TEST_OP    DC.W      $0043        * ORI.W #5,D3
 *TEST_OP    DC.W      $4403        * NEG.B D3
-TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
+*TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
+TEST_OP    DC.W      $D485        * ADD.L  D5,D2
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
