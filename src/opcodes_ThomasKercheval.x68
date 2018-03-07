@@ -141,9 +141,9 @@ O_Z_ZERO   BTST      #12,D1          * Test fourth MSB
  ******************************************************************************
 ROTATEZ    BTST      #8,D1           * Determines direction
            BEQ       GO_RIGHT
-           MOVE.W    #0,D7           * Lets say 0 is R and 1 is left
+           MOVE.W    #1,D7           * Lets say 0 is R and 1 is left
            BRA       CONT_ROTZ
-GO_RIGHT   MOVE.W    #1,D7           * Lets say 0 is R and 1 is left
+GO_RIGHT   MOVE.W    #0,D7           * Lets say 0 is R and 1 is left
 
 CONT_ROTZ  MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
            AND.W     D1,D2           * Mask bits 6-7
@@ -151,9 +151,9 @@ CONT_ROTZ  MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
            BEQ       NORM_ROTZ
 
            MOVE.W    #5,EA_FLAG      * "weird" rotation
-           MOVE.W    #$0030,D2       * Load mask for bits 4-5
-           AND.W     D1,D2           * Mask bits 4-5 or 9-10
-           LSR       #4,D2
+           MOVE.W    #$0018,D2       * Load mask for bits 3-4
+           AND.W     D1,D2           * Mask bits 3-4
+           LSR       #3,D2
            BRA       COMP_ROTZ
 
 NORM_ROTZ  MOVE.W    #1,EA_FLAG      * Normal 6-EA
@@ -168,7 +168,7 @@ COMP_ROTZ  CMPI.W    #$0000,D2       * ASd signature
            CMPI.W    #$0001,D2       * LSd signature
            BEQ       O_LSd
 
-           CMPI.W    #$0002,D2       * ROd signature
+           CMPI.W    #$0003,D2       * ROd signature
            BEQ       O_ROd
 
            BRA       INVALID_OP      * Invalid opcode
@@ -440,18 +440,50 @@ O_ADDA     NOP * TODO
 *
 *******************************************************************************
 ********** LSd ****************************************************************
-O_LSd      NOP * TODO
+O_LSd      LEA       STR_LSR,A6      * Load LSR into A6
+           JSR       DIR_UTIL
+           JSR       WRITE_ANY
 
+           JSR       SIZE_UTIL
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** ASd ****************************************************************
-O_ASd      NOP * TODO
+O_ASd      LEA       STR_ASR,A6      * Load ASR into A6
+           JSR       DIR_UTIL
+           JSR       WRITE_ANY
 
+           JSR       SIZE_UTIL
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** ROd ****************************************************************
-O_ROd      NOP * TODO
+O_ROd      LEA       STR_ROR,A6      * Load ROR into A6
+           JSR       DIR_UTIL
+           JSR       WRITE_ANY
 
+           JSR       SIZE_UTIL
+           BRA       PREP_EA
+
+  ******** UTILITY TO SELECT R/L version of LSd/ASd/ROd
+DIR_UTIL   BTST      #0,D7           * 0 is R and 1 is left
+           BEQ       RET_DIR_U
+           ADDA.L    #4,A6           * If left, add one to select left version
+RET_DIR_U  RTS
+
+  ******** UTILITY TO GET SIZE of LSd/ASd/ROd
+SIZE_UTIL  LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY       * Write '.' to buffer
+
+           JSR       GET_OP_SZ
+           CMPI.W    #-5,SIZE_OP     * If size bits are 11, then it is "weird"
+           BEQ       WEIRD_ROT       * Handle memory shift
+           JSR       WRITE_ANY       * Else, write size
+           RTS
+
+         * Handles case where there is no size (memory shifts)
+WEIRD_ROT  MOVE.B    STR_SPACE,-(A2) * Erase '.' from buffer
+           RTS
 
 ********** End opcode specific processing *************************************
 *******************************************************************************
@@ -657,8 +689,6 @@ STR_MOVEA  DC.B      'MOVEA',0
 STR_ORI    DC.B      'ORI',0
 STR_ADD    DC.B      'ADD',0
 STR_ADDA   DC.B      'ADDA',0
-STR_ASL    DC.B      'ASL',0
-STR_ASR    DC.B      'ASR',0
 STR_BCLR   DC.B      'BCLR',0
 STR_BCS    DC.B      'BCS',0
 STR_BGE    DC.B      'BGE',0
@@ -671,13 +701,15 @@ STR_DIVS   DC.B      'DIVS',0
 STR_EOR    DC.B      'EOR',0
 STR_JSR    DC.B      'JSR',0
 STR_LEA    DC.B      'LEA',0
-STR_LSL    DC.B      'LSL',0
 STR_LSR    DC.B      'LSR',0
+STR_LSL    DC.B      'LSL',0
+STR_ASR    DC.B      'ASR',0
+STR_ASL    DC.B      'ASL',0
+STR_ROR    DC.B      'ROR',0
+STR_ROL    DC.B      'ROL',0
 STR_MULS   DC.B      'MULS',0
 STR_NEG    DC.B      'NEG',0
 STR_OR     DC.B      'OR',0
-STR_ROL    DC.B      'ROL',0
-STR_ROR    DC.B      'ROR',0
 STR_SUB    DC.B      'SUB',0
 STR_SUBQ   DC.B      'SUBQ',0
 
@@ -704,7 +736,19 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
 *TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
 *TEST_OP    DC.W      $49F8        * LEA $1012,A4
-TEST_OP    DC.W      $0884        * BCLR   #4,D4
+*TEST_OP    DC.W      $0884        * BCLR   #4,D4
+*TEST_OP    DC.W      $E84E        * LSR      #4,D6
+*TEST_OP    DC.W      $EB49        * LSL.W    #5,D1
+*TEST_OP    DC.W      $E3F8        * LSL.W    $1012
+*TEST_OP    DC.W      $E2F8        * LSL      $1012
+*TEST_OP    DC.W      $E846        * ASR.W    #4,D6
+*TEST_OP    DC.W      $EB41        * ASL.W    #5,D1
+*TEST_OP    DC.W      $E0F8        * ASL      $1012
+*TEST_OP    DC.W      $E1F8        * ASL      $1012
+*TEST_OP    DC.W      $E85E        * ROR.W    #4,D6
+*TEST_OP    DC.W      $EB59        * ROL.W    #5,D1
+*TEST_OP    DC.W      $E6F8        * ROL      $1012
+TEST_OP    DC.W      $E7F8        * ROL      $1012
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
