@@ -311,8 +311,19 @@ O_JSR      NOP * TODO
 
 *******************************************************************************
 ********** MOVEM **************************************************************
-O_MOVEM    NOP * TODO
+O_MOVEM    MOVE.W    #7,EA_FLAG      * Load flag for EA
+           LEA       STR_MOVEM,A6    * Load MOVEM string into A6
+           JSR       WRITE_ANY
 
+           LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY
+
+           MOVE.W    D1,D6           * Must test bit 6 for size flag
+           LSR.W     #6,D6           * Shift 6th bit into least sig postition
+           JSR       SINGLE_SZ       * MOVEM has one size flag
+           JSR       WRITE_ANY
+
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** LEA ****************************************************************
@@ -590,8 +601,10 @@ OP_L_SZ    MOVE.W    #2,SIZE_OP      * Load size flag for API call later
            RTS
 
 *******************************************************************************
-******************** Get size of single flag ops, where flag is in D6 *********
-SINGLE_SZ  NOP
+******************** Get size of single flag ops, where flag is in LSB of D6 **
+SINGLE_SZ  BTST      #0,D6
+           BEQ       OP_W_SZ         * 0 is a word
+           BRA       OP_L_SZ         * Else, 1 is a long
 
 *******************************************************************************
 ******************** Write a null-term string to buff *************************
@@ -636,6 +649,7 @@ INVAL_SZG  DC.B      'Found an invalid size!',CR,LF,0
 STR_NOP    DC.B      'NOP',0
 STR_RTS    DC.B      'RTS',0
 STR_MOVE   DC.B      'MOVE',0
+STR_MOVEM  DC.B      'MOVEM',0
 STR_MOVEA  DC.B      'MOVEA',0
 STR_ORI    DC.B      'ORI',0
 STR_ADD    DC.B      'ADD',0
@@ -684,7 +698,8 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
 *TEST_OP    DC.W      $D485        * ADD.L  D5,D2
 *TEST_OP    DC.W      $6000        * BRA    <LABEL>
-TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
+*TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
+TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
