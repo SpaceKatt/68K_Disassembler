@@ -71,7 +71,7 @@ OP_TREE    BTST      #15,D1          * Test MSB in opcode
 
            ** NEG JSR MOVEM LEA SUBQ
            BTST      #12,D1          * Test fourth MSB in opcode
-           BEQ       O_SUBQ
+           BNE       O_SUBQ
 
            MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            AND.W     D1,D2           * MASK bits
@@ -93,7 +93,7 @@ OP_TREE    BTST      #15,D1          * Test MSB in opcode
  *  MULS ADD ADDA LSR ASR ROR LSL ASL ROL
  ******************************************************************************
 ONE        BTST      #14,D1          * Test second most sig bit in opcode
-           BNE       O_ZERO
+           BEQ       O_ZERO
 
            **  MULS ADD ADDA
            **  LSR ASR ROR LSL ASL ROL
@@ -102,7 +102,7 @@ ONE        BTST      #14,D1          * Test second most sig bit in opcode
 
            **  MULS ADD ADDA
            BTST      #12,D1
-           BNE       O_MULS          * Identified MULS op
+           BEQ       O_MULS          * Identified MULS op
 
            MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
            AND.W     D1,D2           * MASK bits
@@ -186,9 +186,9 @@ Z_ONE      MOVE.W    MASK_12_15,D2   * Load mask for bits 12-15
            MOVE.W    MASK_6_8,D2     * Load mask for bits 6-8
            AND.W     D1,D2           * MASK bits
            CMPI.W    #$0040,D2       * Will be zero if 6-8 are 001
-           BEQ       O_MOVE          * MOVE
+           BEQ       O_MOVEA         * MOVEA
 
-           BRA       O_MOVEA         * MOVEA
+           BRA       O_MOVE          * MOVE
 
  ******************************************************************************
  *  ORI BCLR CMPI
@@ -238,6 +238,7 @@ O_ORI      MOVE.W    #1,EA_FLAG      * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
+* TODO MAYBE ADD NEW FLAG FOR CMPI AND ORI?
            BRA       PREP_EA
 
 *******************************************************************************
@@ -260,9 +261,10 @@ O_BCLR_2   MOVE.W    #9,EA_FLAG      * Load flag for EA
 *******************************************************************************
 ********** CMPI ***************************************************************
 O_CMPI     MOVE.W    #1,EA_FLAG      * Load flag for EA
-           LEA       STR_CMPI,A6      * Load ORI string into A6
+           LEA       STR_CMPI,A6     * Load CMPI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
+* TODO MAYBE ADD NEW FLAG FOR CMPI AND ORI?
            BRA       PREP_EA
 
 *******************************************************************************
@@ -275,7 +277,7 @@ O_MOVEA    MOVE.W    #0,EA_FLAG      * Load flag for EA
            JSR       WRITE_ANY
            JSR       GET_MV_SZ
 
-           CMP.B     #0,SIZE_OP      * MOVEA cannot be a byte
+           CMP.W     #0,SIZE_OP      * MOVEA cannot be a byte
            BEQ       INVALID_OP
 
            JSR       WRITE_ANY
@@ -296,8 +298,11 @@ O_MOVE     MOVE.W    #0,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** NEG ****************************************************************
-O_NEG      NOP * TODO
+O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
+           LEA       STR_NEG,A6      * Load ORI string into A6
+           JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** JSR ****************************************************************
@@ -371,8 +376,18 @@ O_EOR      NOP * TODO
 
 *******************************************************************************
 ********** MULS ***************************************************************
-O_MULS     NOP * TODO
+O_MULS     MOVE.W    #2,EA_FLAG      * Load flag for EA
+           LEA       STR_MULS,A6     * Load ORI string into A6
+           JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
+* TODO validation
+           LEA       STR_PERI,A6     * Load '.' string into A6
+           JSR       WRITE_ANY       * Write '.' to buffer
 
+           MOVE.W    #1,SIZE_OP      * 1 into size_op to represent word for API
+           LEA       STR_WORD,A6
+           JSR       WRITE_ANY       * Write size to buffer
+
+           BRA       PREP_EA
 
 *******************************************************************************
 ********** ADD ****************************************************************
@@ -456,6 +471,7 @@ PREP_EA    JSR       SPACE_FILL
            MOVE.W    SIZE_OP,D4
            MOVE.W    #0,D0
            JSR       START_EA
+           JSR       EA_VALID
            BRA       PREP_RET
 
 *******************************************************************************
@@ -465,6 +481,32 @@ PREP_RET   RTS * TODO
 *******************************************************************************
 ******************** Invalid opcode handling **********************************
 INVALID_OP RTS * TODO
+
+*******************************************************************************
+******************** EA buffer address return validation **********************
+EA_VALID   MOVE.L    A0,D7
+           BTST      #0,D7
+           BEQ       EA_IS_VAL
+           LEA       INVAL_MSG,A1
+           BRA       ERR_MSG
+
+EA_IS_VAL  RTS
+
+*******************************************************************************
+******************** EA buffer address return validation **********************
+SZ_VALID   CMPI.W    #-5,D4
+           BNE       EA_IS_VAL
+           LEA       INVAL_SZG,A1
+           BRA       ERR_MSG
+
+SZ_IS_VAL  RTS
+
+*******************************************************************************
+******************** Write an error message ***********************************
+ERR_MSG    MOVE.B    #14,D0          * Write message
+           TRAP      #15
+           MOVE.B    #9,D0           * Break out of sim
+           TRAP      #15
 
 *******************************************************************************
 ******************** Write opcode with no size ********************************
@@ -517,15 +559,15 @@ GET_OP_SZ  MOVE.W    MASK_6_7,D2
            BEQ       OP_B_SZ
 
            CMP.W     #$0040,D2       * Byte if size bits are 01
-           BEQ       OP_L_SZ
-
-           CMP.W     #$0080,D2       * Byte if size bits are 10
            BEQ       OP_W_SZ
 
+           CMP.W     #$0080,D2       * Byte if size bits are 10
+           BEQ       OP_L_SZ
+
 SZ_INVLD   MOVE.W    #-5,SIZE_OP     * Something invalid
-*           RTS
-           ADDQ      #4,A7           * DANGER ZONE!
-           BRA       INVALID_OP
+           RTS
+           *ADDQ      #4,A7           * DANGER ZONE!
+           *BRA       INVALID_OP
 
 OP_B_SZ    MOVE.W    #0,SIZE_OP      * Load size flag for API call later
            LEA       STR_BYTE,A6     * Load str representation for byte
@@ -578,6 +620,8 @@ MASK_6_7   DC.W      $00C0           * Mask for the bits from X to Y for _X_Y
 
 ******************** Opcode strings *******************************************
 INVAL_FLG  DC.B      '!!!!',0
+INVAL_MSG  DC.B      'Returned buffer must be on word boundary, looking at you Saam!',CR,LF,0
+INVAL_SZG  DC.B      'Found an invalid size!',CR,LF,0
 
 STR_NOP    DC.B      'NOP',0
 STR_RTS    DC.B      'RTS',0
@@ -622,8 +666,12 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $4E75        * RTS
 *TEST_OP    DC.W      $8200        * OR D0,D0
 *TEST_OP    DC.W      $3200        * MOVE.W D0,D1
-TEST_OP    DC.W      $0880        * BCLR  #15,D0
+*TEST_OP    DC.W      $3240        * MOVEA.W D0,A1
+*TEST_OP    DC.W      $0880        * BCLR  #15,D0
 *TEST_OP    DC.W      $0380        * BCLR  D1,D0
+*TEST_OP    DC.W      $0043        * ORI.W #5,D3
+*TEST_OP    DC.W      $4403        * NEG.B D3
+TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
