@@ -8,7 +8,7 @@
 CR              EQU       $0D   * Carriage return
 LF              EQU       $0A   * Line feed
 Stack           EQU       $8000 *the stack grows backwards
-UserTypesENTER  EQU       $8002 
+UserTypesENTER  EQU       $8002 *any unusual user input will not overwrite our code
 PageOfOutput    EQU       80  
 
            ORG       $1000
@@ -56,9 +56,12 @@ START:                              * first instruction of program
             *Pointer to next opcode is in A0
             *Ending address is at A3
             
+            *check that startAddress < endAddress
+            CMPA.L  A3,A0
+            BGT     endProg
+            
             *Clear data registers
             CLR.L   D0
-            CLR.L   D2
             CLR.L   D4
             CLR.L   D6
             CLR.L   D7
@@ -67,63 +70,60 @@ START:                              * first instruction of program
             MOVE.L  #0,A5
             MOVE.L  #0,A6
 
-            *Set output buffer to A2
-            LEA     OutputBuffer,A2
-            *Use A3 to check for user pressing ENTER
-            *(A3), which is set to FF will change to 00 if the user
+            *Use A4 to check for user pressing ENTER
+            *(A4), which is set to FF will change to 00 if the user
             *   presses ENTER, and the trap task will store in D1 that
             *   no characters were read in when reading a string
             MOVEA.L #UserTypesEnter,A4
             
-            *while memory pointer < ending address
-loop1       CMP.L   A3,A0   
-            BLE     continue    *continue if memory pointer < ending address
-            CMP.L   #0,D2       *D2 counts how many lines of output are buffered    
-            BEQ     endloop1    *OR if NOT memptr < endAddr, continue if number of
-                                *   buffered output lines is > 0
-continue            *if starting > ending, print out buffer for the last time
-                    CMP.L   A3,A0
-                    BGT     waitToReadENTER
-                    *do we have 80 lines of buffered output? no, keep disassembling
-                    CMP.B   #PageOfOutput,D2
-                    BNE     skipReadingENTER
-                    
-waitToReadENTER     MOVE.B  #2,D0   *trap task for reading input
-                    TRAP    #15     *after this JSR to output the buffer?
-                    JSR     OutputTheBuffer
-                    BRA     loop1
-skipReadingENTER    *get ready to call opcodes
-                    *need to put the current address of the instruction into the
-                    *   output buffer
-                    MOVE.B  #0,D0   *clear the bad flag
-                    *save all registers except A0,A2,D0
-                    MOVEM.L D1-D7/A1/A3-A6,-(SP)
-                    *call opcodes
-                    *mess up the data registers
-                    MOVEA.L #$FFFFFFFF,A3
-                    MOVEA.L #$FFFFFFFF,A6
-                    MOVEA.L #$FFFFFFFF,A5
-                    MOVE.L  #$FFFFFFFF,D1
-                    MOVE.L  #$FFFFFFFF,D2
-                    MOVE.L  #$FFFFFFFF,D3
-                    MOVE.L  #$FFFFFFFF,D4
-                    *restore my registers (except A0,A2,D0)
-                    MOVEM.L (SP)+,D1-D7/A1/A3-A6
-                    *bad flag set?
-                    CMP.B   #0,D0
-                    BEQ     noFlagSet
-                    JSR     HandleBadFlag
-noFlagSet           *add CRLF,0 to end of each buffered line
-                    MOVE.B  #CR,(A2)+
-                    MOVE.B  #LF,(A2)+
-                    MOVE.B  #0,(A2)+
-                    ADDA    #2,A0   *MOCK opcodes + EA reading a word
-                    ADD.B   #1,D2   *MOCK adding to the output buffer
+waitForENTER    MOVE.L  #0,D2   *reset linesOutputted
+                MOVE.B  #2,D0   *trap task for reading input
+                TRAP    #15     *read input
             
-                    BRA     loop1
-endloop1                
+                *while instructionPtr <= ending address
+loopPrintLines  CMP.L   A3,A0   
+                BGT     endProg
+            
+                *stop printing when linesOutputted == 80
+                CMP.L   #80,D2   
+                BEQ     waitForENTER
+                *increment linesOutputted
+                ADD.B   #1,D2        
+              
+                *Set output buffer to A2
+                LEA     OutputBuffer,A2
+                *get ready to call opcodes
+                *need to put the current address of the instruction into the
+                *   output buffer
+                *save all registers except A0,A2,D0
+                MOVEM.L D1-D7/A1/A3-A6,-(SP)
+                *clear bad flag
+                MOVE.B  #0,D0
+                *call opcodes
+                *mess up the data registers
+                MOVEA.L #$FFFFFFFF,A3
+                MOVEA.L #$FFFFFFFF,A6
+                MOVEA.L #$FFFFFFFF,A5
+                MOVE.L  #$FFFFFFFF,D1
+                MOVE.L  #$FFFFFFFF,D2
+                MOVE.L  #$FFFFFFFF,D3
+                MOVE.L  #$FFFFFFFF,D4
+                *restore my registers (except A0,A2,D0)
+                MOVEM.L (SP)+,D1-D7/A1/A3-A6
+                *bad flag set?
+                CMP.B   #0,D0
+                BEQ     noFlagSet
+                JSR     HandleBadFlag
+noFlagSet       *add CRLF,0 to end of each buffered line
+                MOVE.B  #CR,(A2)+
+                MOVE.B  #LF,(A2)+
+                MOVE.B  #0,(A2)+
+                *PRINT THE BUFFER (print from OutputBuffer until A2 curr)
+                ADDA    #2,A0   *MOCK opcodes + EA reading a word
+            
+                BRA     loopPrintLines               
        
-            STOP    #3000
+endProg     STOP    #3000
 
 *******************************************************************************
 ******************** Fin ******************************************************
@@ -199,8 +199,6 @@ HandleBadFlag           *nothing here yet
 OutputTheBuffer         *nothing here yet
 
                         MOVE.L  #0,D2   *reset the output buffer line count
-                        *reset the output buffer pointer back to start
-                        MOVEA.L OutputBuffer,A2 
                         
                         RTS
 *******************************************************************************
@@ -218,6 +216,7 @@ OutputBuffer            DC.L    0
 *******************************************************************************
 *******************************************************************************
     END    START                    * last line of source
+
 
 
 
