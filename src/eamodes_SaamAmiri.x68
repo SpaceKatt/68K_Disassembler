@@ -11,9 +11,11 @@ LF         EQU     $0A            * Line feed
          ORG       $1000
 START:                             * first instruction of program
   LEA     STACK,SP
-  MOVE.B  #$8,D2
-  MOVE.W  #$3300,D3
-  JSR     START_EA
+  *MOVE.B  #$3,D2
+  *MOVE.W  #$3308,D3
+  MOVE.B   #$6,D2
+  MOVE.W   #$0008,D3
+  JSR      START_EA
  
   SIMHALT
   
@@ -48,7 +50,9 @@ START_EA                           *OPCODE coming in
   
   CMP     #9,D2
   BEQ     bin9
-  
+
+  CMP     #10,D2
+  BEQ     bin10  
   BRA     END * D2 not set to proper EA Flag
   
     
@@ -94,13 +98,52 @@ bin2 * 9 bit Data
   JSR     reg_sum           * sum reg bits
   RTS                       *return to OPCODER  
 bin3 * 9 bit Data w/Direction
+  BTST   #8,D3             * check direction bit
+  BEQ     bin2              * bra if bit = zero
+ 
+  MOVE.W  D3,D7             * store temp 
+ 
+  LEA     STR_D,A6          * load  D
+  JSR     write_str         * write D to buff
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  JSR     reg_sum           * sum reg bits
+
+  LEA     STR_COMMA,A6      * load  ,
+  JSR     write_str         * write , to buff
+
+  MOVE.W  D7,D3             * restore D3
+  JSR     mode_test         * print destination
+  RTS                       * return to OPCODER
 
 bin4 * 8 bit branch displacment
 
 bin5 * Special rotation (12 bit)
 
 bin6 * SUBQ (special case)
+  MOVE.W  D3,D7             * save temp
+  LEA     STR_IMM,A6        * load  #
+  JSR     write_str         * write #
+  MOVE.W  #$0E00,D5         * bit mask data bits
+  AND.W   D5,D3             
+  CMP.W   #0,D3             *
+  BNE     shift
+              
+  MOVE.B  #$38,(A2)+
+  JSR     write_comma
+  MOVE.W  D7,D3             * restore D3
+  JSR     mode_test
+  RTS
 
+shift
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  JSR     reg_sum           * sum reg bits
+  JSR     write_comma       * write comma
+  MOVE.W  D7,D3
+  JSR     mode_test
+  RTS 
+    
 bin7 * MOVEM (6 bit w/Direction)
 
 bin8 * 9 bit Address
@@ -117,9 +160,10 @@ bin8 * 9 bit Address
   AND.W   D5,D3             * keep only 3 LSB
   JSR     reg_sum           * sum reg bits
   RTS                       * return to OPCODER  
-bin9 * BCLR w/immediate
+bin9  * BCLR w/immediate
   
-  
+bin10 * 6 bit w/immediate
+
 **Function finds mode than calls reg_test than returns back to Bin caller 
 mode_test
   MOVE.B #5,D5 *set bit decrement counter
@@ -128,7 +172,6 @@ mode_test
   BRA    mode0
   
 mode1
-
   SUB.B  #1,D5 *decrement bit counter 
   BTST   D5,D3 *check mode bit 2
   BNE    mode11
@@ -142,7 +185,32 @@ mode0
   
 mode11                      * assume mode 11->111
   *test register for (xxx).W,(xxx).L,#imm
+  BTST   #2,D3
+  BNE    reg100
+  BRA    reg00
   
+reg100 *assume 1->100 #imm  
+  LEA    STR_IMM,A6         * load  #
+  JSR    write_str          * write #  
+   CMP.B  #2,D4
+  BEQ    read_long
+  BRA    read_word         
+      
+
+
+
+    
+  
+reg00                        *TODO add validation assume 00
+  BTST   #0,D3
+  BNE    reg001
+  BRA    reg000
+  
+reg001 * (xxx).L                       
+
+
+reg000 * (xxx).W
+ 
 
 mode10                      * assume if mode 10->100= -(An)
   LEA    STR_DECA,A6        * load  -(A
@@ -210,14 +278,28 @@ write_str
   BRA       write_str
 write_done  RTS
  
-
+write_comma
+  LEA       STR_COMMA,A6
+  JSR       write_str
+  RTS 
+  
+read_word
+  MOVE.W    (A0)+,D1
+  RTS  
+read_long
+  MOVE.L    (A0)+,D1
+  RTS
 END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
 
-SUMTABLE   DC.B      $30,$31,$32,$33,$34,$35,$36,$37
+SUMTABLE1  DC.B      $30,$31,$32,$33,$34,$35,$36,$37
+SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
+           DC.B      '9','A','B','C','D','E','F'
+
 GOODBUFF   DC.B      $00
 
+STR_IMM    DC.B      '#',0
 STR_D      DC.B      'D',0
 STR_A      DC.B      'A',0
 
@@ -227,6 +309,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 
