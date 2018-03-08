@@ -93,8 +93,12 @@ loopPrintLines  CMP.L   A3,A0
                 *Set output buffer to A2
                 LEA     OutputBuffer,A2
                 *get ready to call opcodes
-                *need to put the current address of the instruction into the
-                *   output buffer
+                JSR     AddCurrAddressToBuffer
+                
+                MOVE.B  #$46,(A2)+
+                MOVE.B  #$41,(A2)+
+                MOVE.B  #$44,(A2)+
+                
                 *save all registers except A0,A2,D0
                 MOVEM.L D1-D7/A1/A3-A6,-(SP)
                 *clear bad flag
@@ -115,10 +119,10 @@ loopPrintLines  CMP.L   A3,A0
                 BEQ     noFlagSet
                 JSR     HandleBadFlag
 noFlagSet       *add CRLF,0 to end of each buffered line
-                MOVE.B  #CR,(A2)+
-                MOVE.B  #LF,(A2)+
+                *MOVE.B  #CR,(A2)+
+                *MOVE.B  #LF,(A2)+
                 MOVE.B  #0,(A2)+
-                *PRINT THE BUFFER (print from OutputBuffer until A2 curr)
+                JSR     OutputTheBuffer
                 ADDA    #2,A0   *MOCK opcodes + EA reading a word
             
                 BRA     loopPrintLines               
@@ -188,6 +192,26 @@ doNotShiftThisTime      BRA     TITARloop1
 endTITARloop1           MOVE.L D7,A6
                         RTS
                         
+*Each disassembled line needs the address of the instruction in memory
+*printed on the left side
+AddCurrAddressToBuffer  MOVE.B  #0,D3
+                        MOVE.L  A0,D4
+loopACATB               CMP.B   #8,D3
+                        BEQ     endMethodACATB
+                        ADDQ    #1,D3
+                        ROL.L   #$04,D4
+                        MOVE.B  D4,D5
+                        AND     #%00001111,D5
+                        MOVEA   D5,A5  
+                        MOVE.B  (NumbersToASCII,A5),(A2)+
+                        BRA     loopACATB
+                        
+endMethodACATB          MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        RTS
+                        
 *Handles problems encountered by opcode section
 *the bad flag is stored at D0                        
 HandleBadFlag           *nothing here yet
@@ -196,14 +220,18 @@ HandleBadFlag           *nothing here yet
                         RTS
                         
 *print a page of the disassembled instructions to the user                        
-OutputTheBuffer         *nothing here yet
-
-                        MOVE.L  #0,D2   *reset the output buffer line count
+OutputTheBuffer         MOVE.B  #0,D0
+                        LEA     OutputBuffer,A1
+                        MOVEA.L A2,A5
+                        SUBA    OutputBuffer,A5
+                        MOVE.W  A5,D1
+                        TRAP    #15
                         
                         RTS
 *******************************************************************************
 ******************** Put variables and constants here *************************
-                        
+
+NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46                        
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0    
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
 InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
