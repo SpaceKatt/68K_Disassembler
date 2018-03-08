@@ -92,26 +92,15 @@ loopPrintLines  CMP.L   A3,A0
               
                 *Set output buffer to A2
                 LEA     OutputBuffer,A2
+                *track currAddress in case of bad flag being set
+                MOVEA.L A0,A6
                 *get ready to call opcodes
                 JSR     AddCurrAddressToBuffer
-                
-                MOVE.B  #$46,(A2)+
-                MOVE.B  #$41,(A2)+
-                MOVE.B  #$44,(A2)+
-                
                 *save all registers except A0,A2,D0
                 MOVEM.L D1-D7/A1/A3-A6,-(SP)
                 *clear bad flag
                 MOVE.B  #0,D0
-                *call opcodes
-                *mess up the data registers
-                MOVEA.L #$FFFFFFFF,A3
-                MOVEA.L #$FFFFFFFF,A6
-                MOVEA.L #$FFFFFFFF,A5
-                MOVE.L  #$FFFFFFFF,D1
-                MOVE.L  #$FFFFFFFF,D2
-                MOVE.L  #$FFFFFFFF,D3
-                MOVE.L  #$FFFFFFFF,D4
+                *call opcodes*******************************************
                 *restore my registers (except A0,A2,D0)
                 MOVEM.L (SP)+,D1-D7/A1/A3-A6
                 *bad flag set?
@@ -206,6 +195,7 @@ loopACATB               CMP.B   #8,D3
                         MOVE.B  (NumbersToASCII,A5),(A2)+
                         BRA     loopACATB
                         
+                        *Tab
 endMethodACATB          MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
@@ -214,10 +204,40 @@ endMethodACATB          MOVE.B  #$20,(A2)+
                         
 *Handles problems encountered by opcode section
 *the bad flag is stored at D0                        
-HandleBadFlag           *nothing here yet
+HandleBadFlag           
                         *reset the flag
                         MOVE.B  #0,D0
-                        RTS
+                        
+                        *DATA
+                        MOVE.B  #$44,(A2)+
+                        MOVE.B  #$41,(A2)+
+                        MOVE.B  #$54,(A2)+
+                        MOVE.B  #$41,(A2)+
+                        
+                        *Tab
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        
+                        *Instruction word that could not be disassembled
+                        MOVE.W  (A6),D1
+                        LSL.L   #$08,D1
+                        LSL.L   #$08,D1
+                        
+                        *Put the bad instruction word into the output buffer
+                        MOVE.B  #0,D3
+loopHBF                 CMP.B   #4,D3
+                        BEQ     endMethodHBF
+                        ADDQ    #1,D3
+                        ROL.L   #$04,D1
+                        MOVE.B  D1,D4
+                        AND     #%00001111,D4
+                        MOVEA   D4,A5  
+                        MOVE.B  (NumbersToASCII,A5),(A2)+
+                        BRA     loopHBF
+                        
+endMethodHBF            RTS
                         
 *print a page of the disassembled instructions to the user                        
 OutputTheBuffer         MOVE.B  #0,D0
