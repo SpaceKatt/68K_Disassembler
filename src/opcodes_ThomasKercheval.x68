@@ -235,11 +235,10 @@ BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 *******************************************************************************
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 ********** ORI ****************************************************************
-O_ORI      MOVE.W    #1,EA_FLAG      * Load flag for EA
+O_ORI      MOVE.W    #10,EA_FLAG      * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
-* TODO MAYBE ADD NEW FLAG FOR CMPI AND ORI?
            BRA       PREP_EA
 
 *******************************************************************************
@@ -261,11 +260,10 @@ O_BCLR_2   MOVE.W    #9,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** CMPI ***************************************************************
-O_CMPI     MOVE.W    #1,EA_FLAG      * Load flag for EA
+O_CMPI     MOVE.W    #10,EA_FLAG      * Load flag for EA
            LEA       STR_CMPI,A6     * Load CMPI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
-* TODO MAYBE ADD NEW FLAG FOR CMPI AND ORI?
            BRA       PREP_EA
 
 *******************************************************************************
@@ -352,22 +350,38 @@ O_BRA      MOVE.W    #4,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** BCS ****************************************************************
-O_BCS      NOP * TODO
+O_BCS      MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       STR_BCS,A6      * Load BRA string into A6
+           JSR       WRITE_ANY
+
+           BRA       PREP_EA
 
 
 *******************************************************************************
 ********** BVC ****************************************************************
-O_BVC      NOP * TODO
+O_BVC      MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       STR_BVC,A6      * Load BRA string into A6
+           JSR       WRITE_ANY
+
+           BRA       PREP_EA
 
 
 *******************************************************************************
 ********** BGE ****************************************************************
-O_BGE      NOP * TODO
+O_BGE      MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       STR_BGE,A6      * Load BRA string into A6
+           JSR       WRITE_ANY
+
+           BRA       PREP_EA
 
 
 *******************************************************************************
 ********** BLT ****************************************************************
-O_BLT      NOP * TODO
+O_BLT      MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       STR_BLT,A6      * Load BRA string into A6
+           JSR       WRITE_ANY
+
+           BRA       PREP_EA
 
 
 *******************************************************************************
@@ -699,6 +713,10 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
 *TEST_OP    DC.W      $D485        * ADD.L  D5,D2
 *TEST_OP    DC.W      $6000        * BRA    <LABEL>
+*TEST_OP    DC.W      $6500        * BCS    <LABEL>
+*TEST_OP    DC.W      $6800        * BVC    <LABEL>
+*TEST_OP    DC.W      $6C00        * BGE    <LABEL>
+*TEST_OP    DC.W      $6D00        * BLT    <LABEL>
 *TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
 *TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
 *TEST_OP    DC.W      $49F8        * LEA $1012,A4
@@ -714,7 +732,7 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $E85E        * ROR.W    #4,D6
 *TEST_OP    DC.W      $EB59        * ROL.W    #5,D1
 *TEST_OP    DC.W      $E6F8        * ROL      $1012
-TEST_OP    DC.W      $E7F8        * ROL      $1012
+*TEST_OP    DC.W      $E7F8        * ROL      $1012
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
