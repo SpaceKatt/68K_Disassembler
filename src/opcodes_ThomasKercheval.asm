@@ -774,7 +774,8 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $8240        * OR.W     D0,D1
 *TEST_OP    DC.W      $928B        * SUB.L    A3,D1
 *TEST_OP    DC.W      $B507        * EOR.B    #2,D7
-TEST_OP    DC.W      $D8C2        * ADDA.W   D4,A4
+*TEST_OP    DC.W      $D8C2        * ADDA.W   D4,A4
+TEST_OP    DC.W      $43F9        * LEA     <label>,A1
 
 TEST_FLAG  DC.W      $0
 TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
