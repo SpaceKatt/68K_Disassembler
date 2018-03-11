@@ -7,17 +7,17 @@
 
 CR         EQU       $0D             * Carriage return
 LF         EQU       $0A             * Line feed
-STACKPTRE  EQU       $8000
-
-           ORG       $1000
-START:                               * first instruction of program
-******************** Start*****************************************************
-TEST_START LEA       STACKPTRE,SP
-           LEA       TEST_OP,A0
-           MOVE.B    TEST_FLAG,D0
-           LEA       TEST_BUFF,A2
-           JSR       OP_START
-CONFIRM_T  BRA       END_THOM
+*STACKPTRE  EQU       $8000
+*
+*           ORG       $1000
+*START:                               * first instruction of program
+********************* Start*****************************************************
+*TEST_START LEA       STACKPTRE,SP
+*           LEA       TEST_OP,A0
+*           MOVE.B    TEST_FLAG,D0
+*           LEA       TEST_BUFF,A2
+*           JSR       OP_START
+*CONFIRM_T  BRA       END_THOM
 
 *******************************************************************************
 ******************** Opcode Start *********************************************
@@ -560,7 +560,8 @@ PREP_EA    JSR       SPACE_FILL
            MOVE.W    ORIG_OP,D3
            MOVE.W    SIZE_OP,D4
            MOVE.W    #0,D0
-           JSR       START_EA
+
+**           JSR       START_EA
            JSR       EA_VALID
            BRA       PREP_RET
 
@@ -736,7 +737,7 @@ STR_WORD   DC.B      'W',0
 STR_LONG   DC.B      'L',0
 
 ******************** Test variables *******************************************
-TEST_A0    DC.L      TEST_OP
+*TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $4E71       * NOP
 *TEST_OP    DC.W      $4E75        * RTS
 *TEST_OP    DC.W      $8200        * OR D0,D0
@@ -775,12 +776,12 @@ TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $928B        * SUB.L    A3,D1
 *TEST_OP    DC.W      $B507        * EOR.B    #2,D7
 *TEST_OP    DC.W      $D8C2        * ADDA.W   D4,A4
-TEST_OP    DC.W      $43F9        * LEA     <label>,A1
+*TEST_OP    DC.W      $43F9        * LEA     <label>,A1
+*
+*TEST_FLAG  DC.W      $0
+*TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-TEST_FLAG  DC.W      $0
-TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-
-           INCLUDE   tester_eamodes_SaamAmiri.x68
+*           INCLUDE   tester_eamodes_SaamAmiri.x68
 
            END       START                    * last line of source
 

@@ -70,7 +70,7 @@ START:                          * first instruction of program
             MOVE.L  #0,A5
             MOVE.L  #0,A6
             
-******************************************* printing out disassembled code ********************************************            
+**************************************** printing out disassembled code ********************************************            
 waitForENTER    MOVE.L  #0,D2   * reset linesOutputted to 0
                 MOVE.B  #2,D0   * trap task for reading input
                 TRAP    #15     * read input, expecting ENTER from user to proceed disassembling
@@ -78,7 +78,7 @@ waitForENTER    MOVE.L  #0,D2   * reset linesOutputted to 0
 loopPrintLines  CMP.L   A3,A0   * while pointerToNextOpcode <= ending address
                 BGT     endProg
            
-                CMP.L   #80,D2   			* stop printing when linesOutputted == 80
+                CMP.L   #20,D2   			* stop printing when linesOutputted == 80
                 BEQ     waitForENTER		* go back to waiting for ENTER from user
                 ADD.B   #1,D2        		* increment linesOutputted
               
@@ -94,6 +94,7 @@ loopPrintLines  CMP.L   A3,A0   * while pointerToNextOpcode <= ending address
                 MOVE.B  #0,D0						* clear bad flag
                 
 				****************************CALL OPCODES HERE*******************************************
+                JSR     OP_START
         
                 MOVEM.L (SP)+,D1-D7/A1/A3-A6	* restore all registers except A0,A2,D0
 				
@@ -106,7 +107,7 @@ noFlagSet       MOVE.B  #0,(A2)+				* null terminate the string stored at (A2)
 				JSR     OutputTheBuffer
 				
 				*********************** REMOVE THIS LINE WHEN INTEGRATING *******************************
-                ADDA    #2,A0   *MOCK opcodes + EA reading a word
+                ****ADDA    #2,A0   *MOCK opcodes + EA reading a word
             
                 BRA     loopPrintLines   		* go back to process and print another line            
        
@@ -242,6 +243,8 @@ OutputTheBuffer         MOVE.B  #0,D0						* load trap task for printing a strin
 						TRAP    #15							*	which is stored in D1, telling TRAP how much to print
                       
                         RTS
+
+
 						
 *******************************************************************************
 ******************** variables and constants **********************************
@@ -254,8 +257,9 @@ StoreInputStartAddr     DC.L    0   * each address needs 8 bytes to be read into
 StoreInputStartAddr2    DC.L    0   * so more space is built in
 StoreInputEndAddr       DC.L    0
 StoreInputEndAddr2      DC.L    0
-OutputBuffer            DC.L    0
+OutputBuffer            DCB.B   80,0
                         
 *******************************************************************************
 *******************************************************************************
+                        INCLUDE "opcodes_ThomasKercheval.asm"
     END    START                    * last line of source
