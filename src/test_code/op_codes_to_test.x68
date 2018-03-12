@@ -8,7 +8,7 @@
 CR         EQU       $0D            * Carriage return
 LF         EQU       $0A            * Line feed
 
-           ORG       $400
+           ORG       $F400
 START:                              * first instruction of program
 ******************** Start*****************************************************
            ********* BIN 0 ***************
@@ -145,21 +145,18 @@ BRA_N      DIVS.W    D1,D2
            OR.L     D5,-(A1)
 
            SUB.B     D1,D1
-           SUB.B     #$A,D4
            SUB.B     $88,D2
            SUB.B     $FFF88,D2
            SUB.B     (A1),D7
            SUB.B     (A1)+,D2
            SUB.B     -(A1),D5
            SUB.W     D1,D1
-           SUB.W     #$A,D4
            SUB.W     $88,D2
            SUB.W     $FFF88,D2
            SUB.W     (A1),D7
            SUB.W     (A1)+,D2
            SUB.W     -(A1),D5
            SUB.L     D1,D1
-           SUB.L     #$A,D4
            SUB.L     $88,D2
            SUB.L     $FFF88,D2
            SUB.L     (A1),D7
@@ -186,21 +183,18 @@ BRA_N      DIVS.W    D1,D2
            SUB.L     D5,-(A1)
  
            ADD.B     D1,D1
-           ADD.B     #$A,D4
            ADD.B     $88,D2
            ADD.B     $FFF88,D2
            ADD.B     (A1),D7
            ADD.B     (A1)+,D2
            ADD.B     -(A1),D5
            ADD.W     D1,D1
-           ADD.W     #$A,D4
            ADD.W     $88,D2
            ADD.W     $FFF88,D2
            ADD.W     (A1),D7
            ADD.W     (A1)+,D2
            ADD.W     -(A1),D5
            ADD.L     D1,D1
-           ADD.L     #$A,D4
            ADD.L     $88,D2
            ADD.L     $FFF88,D2
            ADD.L     (A1),D7
@@ -257,6 +251,12 @@ BRA_N      DIVS.W    D1,D2
 *           ROR.W     D7,D3
 
            ********* INVALID STUFF
+           SUB.B     #$A,D4
+           SUB.L     #$A,D4
+           SUB.W     #$A,D4
+           ADD.B     #$A,D4
+           ADD.L     #$A,D4
+           ADD.W     #$A,D4
 
 *******************************************************************************
 ******************** Fin ******************************************************
