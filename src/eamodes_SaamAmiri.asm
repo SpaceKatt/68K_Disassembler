@@ -4,20 +4,20 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
-*STACK      EQU     $8000  
+STACK      EQU     $8000  
 CR         EQU     $0D            * Carriage return
 LF         EQU     $0A            * Line feed
 
-*         ORG       $1000
-*START:                           * first instruction of program
-*  LEA     STACK,SP
-*  *MOVE.B  #$3,D2
-*  *MOVE.W  #$3308,D3
-*  MOVE.B   #$6,D2
-*  MOVE.W   #$0F08,D3
-*  JSR      START_EA
-* 
-*  SIMHALT
+         ORG       $1000
+START:                           * first instruction of program
+  LEA     STACK,SP
+  *MOVE.B  #$3,D2
+  *MOVE.W  #$3308,D3
+  MOVE.B   #$2,D2
+  MOVE.W   #$0F08,D3
+  JSR      START_EA
+ 
+  SIMHALT
   
 START_EA                         *OPCODE coming in
   CMP     #0,D2
@@ -80,7 +80,7 @@ bin1 * 6 bit
   JSR     mode_test
   RTS                       *return to OPCODER
   
-bin2 * 9 bit Data
+bin2 * 9 bit Data <ea>,Dn
   JSR     mode_test
 
   LEA     STR_COMMA,A6      * load  ,
@@ -93,7 +93,8 @@ bin2 * 9 bit Data
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
   AND.W   D5,D3             * keep only 3 LSB
   JSR     reg_sum           * sum reg bits
-  RTS                       *return to OPCODER  
+  RTS                       *return to OPCODER
+  
 bin3 * 9 bit Data w/Direction
   BTST    #8,D3             * check direction bit
   BEQ     bin2              * bra if bit = zero
@@ -157,8 +158,22 @@ bin8 * 9 bit Address
   AND.W   D5,D3             * keep only 3 LSB
   JSR     reg_sum           * sum reg bits
   RTS                       * return to OPCODER  
-bin9  * BCLR w/immediate
+bin9  * just like 2 but Dn,<ea>
+  MOVE.W  D3,D7             * save temp
+  LEA     STR_D,A6          * load  D
+  JSR     write_str         * write D to buff
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  MOVE.W  #$0007,D5         * bitmask all except 3 LSB
+  AND.W   D5,D3             * keep only 3 LSB
+  JSR     reg_sum           * sum reg bits
   
+  LEA     STR_COMMA,A6      * load  ,
+  JSR     write_str         * write , to buff
+  MOVE.W  D7,D3             * restore orig
+  JSR     mode_test         * test orginal
+  RTS                       *return to OPCODER
+
 bin10 * 6 bit w/immediate
 
 **Function finds mode than calls reg_test than returns back to Bin caller 
@@ -276,12 +291,12 @@ reg_sum
 *Function write string to the buffer
 write_str  
   CMPI.B    #0,(A6)             * Is the byte at A6 the NULL Char?
-  BEQ       write_done
-  MOVE.B    (A6)+,(A2)+
-  BRA       write_str
+  BEQ       write_done          * null terminated?
+  MOVE.B    (A6)+,(A2)+         * increment string and buffer 
+  BRA       write_str           
 write_done  RTS
  
-write_comma
+write_comma                     * write comma to buffer 
   LEA       STR_COMMA,A6
   JSR       write_str
   RTS 
@@ -291,12 +306,12 @@ read_word                       * proccess word after instruction
   MOVE.W    #$000F,D6           * init bit mask
   MOVE.W    #3,D7               * init nibble counter
 word_loop
-  ROL.W     #4,D1
-  MOVE.W    D1,D2
-  AND.W     D6,D2
-  MOVEA.W   D2,A6
-  MOVE.B   (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
-  DBF       D7,word_loop
+  ROL.W     #4,D1               * rot MS nibble to LS nibble
+  MOVE.W    D1,D2               * save D1
+  AND.W     D6,D2               * bitmask LS nibble
+  MOVEA.W   D2,A6               * copy to address reg
+  MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
+  DBF       D7,word_loop        
   RTS
 
 
@@ -306,15 +321,15 @@ read_long                       * proccess long after instruction
   MOVE.W    #$000F,D6           * init bit mask
   MOVE.B    #7,D7               * init nibble counter
 long_loop
-  ROL.L     #4,D1
-  MOVE.L    D1,D2
-  AND.W     D6,D2
-  MOVEA.W   D2,A6
+  ROL.L     #4,D1               * rot MS nibble to LS nibble
+  MOVE.L    D1,D2               * save D1
+  AND.W     D6,D2               * bitmask LS nibble
+  MOVEA.W   D2,A6               * copy to address reg
   MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
   DBF       D7,long_loop
   RTS
 
-*END      SIMHALT
+END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
 
