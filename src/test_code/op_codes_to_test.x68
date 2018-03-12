@@ -8,7 +8,7 @@
 CR         EQU       $0D            * Carriage return
 LF         EQU       $0A            * Line feed
 
-           ORG       $F400
+           ORG       $10000
 START:                              * first instruction of program
 ******************** Start*****************************************************
            ********* BIN 0 ***************
@@ -21,7 +21,6 @@ START:                              * first instruction of program
            MOVE.B    D0,$8459
 
            MOVE.W    D0,D3
-           MOVE.W    #$12,D3
            MOVE.W    D7,(A3)
            MOVE.W    D4,(A3)+
            MOVE.W    D1,-(A3)
@@ -221,17 +220,41 @@ BRA_N      DIVS.W    D1,D2
            ADD.L     D5,-(A1)
 
            ********* BIN 5 ***************
-           ********* BIN 6 ***************
-           ********* BIN 7 ***************
-           ********* BIN 8 ***************
-           ********* BIN 9 ***************
-           ********* BIN 10 **************
-           BCLR      #1,D4
-           BCLR      #3,(A4)
-           BCLR      #3,(A4)+
-           BCLR      #7,-(A4)
-           BCLR      #8,$FF302
+           ** TODO
+*           LSR.W     D7,D3
+*           ASR.W     D7,D3
+*           ROR.W     D7,D3
 
+           ********* BIN 6 ***************
+           SUBQ.B     #1,D1
+           SUBQ.B     #2,$88
+           SUBQ.B     #3,$FFF88
+           SUBQ.B     #4,(A1)
+           SUBQ.B     #5,(A1)+
+           SUBQ.B     #6,-(A1)
+           SUBQ.W     #7,D1
+           SUBQ.W     #8,$88
+           SUBQ.W     #8,$FFF88
+           SUBQ.W     #8,(A1)
+           SUBQ.W     #1,(A1)+
+           SUBQ.W     #2,-(A1)
+           SUBQ.L     #4,D1
+           SUBQ.L     #6,$88
+           SUBQ.L     #8,$FFF88
+           SUBQ.L     #3,(A1)
+           SUBQ.L     #2,(A1)+
+           SUBQ.L     #6,-(A1)
+
+           ********* BIN 7 ***************
+           ** TODO
+
+           ********* BIN 8 ***************
+           LEA       BRA_1,A1
+           LEA       (A2),A4
+           LEA       $EF,A6
+           LEA       $FFFF,A7
+
+           ********* BIN 9 ***************
            BCLR      D1,D4
            BCLR      D3,(A4)
            BCLR      D3,(A4)+
@@ -239,18 +262,80 @@ BRA_N      DIVS.W    D1,D2
            BCLR      D5,$302
            BCLR      D5,$30243
 
+           EOR.B     D1,D1
+           EOR.B     D2,$88
+           EOR.B     D2,$FFF88
+           EOR.B     D7,(A1)
+           EOR.B     D2,(A1)+
+           EOR.B     D5,-(A1)
+
+           EOR.W     D1,D1
+           EOR.W     D2,$88
+           EOR.W     D2,$FFF88
+           EOR.W     D7,(A1)
+           EOR.W     D2,(A1)+
+           EOR.W     D5,-(A1)
+
+           EOR.L     D1,D1
+           EOR.L     D2,$88
+           EOR.L     D2,$FFF8
+           EOR.L     D7,(A1)
+           EOR.L     D2,(A1)+
+           EOR.L     D5,-(A1)
+
+           ********* BIN 10 **************
+           BCLR      #1,D4
+           BCLR      #3,(A4)
+           BCLR      #3,(A4)+
+           BCLR      #7,-(A4)
+           BCLR      #8,$FF302
+
+           ORI.B     #10,D2
+           ORI.B     #26,$88
+           ORI.B     #88,$FFF88
+           ORI.B     #53,(A1)
+           ORI.B     #92,(A1)+
+           ORI.B     #6,-(A1)
            ORI.W     #10,D2
-           CMPI.L    #14,D1
-********** All of this causes error, for now (well, only ROR)
+           ORI.W     #26,$88
+           ORI.W     #988,$FFF88
+           ORI.W     #153,(A1)
+           ORI.W     #92,(A1)+
+           ORI.W     #6,-(A1)
+           ORI.L     #10,D2
+           ORI.L     #26,$88
+           ORI.L     #988,$FFF88
+           ORI.L     #153,(A1)
+           ORI.L     #92,(A1)+
+           ORI.L     #6,-(A1)
+
+           CMPI.B    #10,D2
+           CMPI.B    #26,$88
+           CMPI.B    #88,$FFF88
+           CMPI.B    #53,(A1)
+           CMPI.B    #92,(A1)+
+           CMPI.B    #6,-(A1)
+           CMPI.W    #10,D2
+           CMPI.W    #26,$88
+           CMPI.W    #988,$FFF88
+           CMPI.W    #153,(A1)
+           CMPI.W    #92,(A1)+
+           CMPI.W    #6,-(A1)
+           CMPI.L    #10,D2
+           CMPI.L    #26,$88
+           CMPI.L    #988,$FFF88
+           CMPI.L    #153,(A1)
+           CMPI.L    #92,(A1)+
+           CMPI.L    #6,-(A1)
+
 *           LSR.W     #7,D3
 *           ASR.W     #7,D3
 *           ROR.W     #7,D3
+********** All of this causes error, for now (well, only ROR)
 *           
-*           LSR.W     D7,D3
-*           ASR.W     D7,D3
-*           ROR.W     D7,D3
 
            ********* INVALID STUFF
+           MOVE.W    #$12,D3
            SUB.B     #$A,D4
            SUB.L     #$A,D4
            SUB.W     #$A,D4
