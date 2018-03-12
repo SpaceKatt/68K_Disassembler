@@ -798,7 +798,7 @@ STR_LONG   DC.B      'L',0
 *TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
            NOP
-           INCLUDE   "eamodes_SaamAmiri.asm"
+           INCLUDE   "eamodes_SaamAmiri.x68"
 
            END       START                    * last line of source
 

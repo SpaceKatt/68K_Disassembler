@@ -261,5 +261,5 @@ OutputBuffer            DCB.B   80,0
                         
 *******************************************************************************
 *******************************************************************************
-                        INCLUDE "opcodes_ThomasKercheval.asm"
+                        INCLUDE "opcodes_ThomasKercheval.x68"
     END    START                    * last line of source
