@@ -11,10 +11,10 @@ LF         EQU     $0A            * Line feed
          ORG       $1000
 START:                           * first instruction of program
   LEA     STACK,SP
-  *MOVE.B  #$3,D2
+  *MOVE.B  #3,D2
   *MOVE.W  #$3308,D3
-  MOVE.B   #$2,D2
-  MOVE.W   #$0F08,D3
+  MOVE.B   #10,D2
+  MOVE.W   #$0107,D3
   JSR      START_EA
  
   SIMHALT
@@ -57,12 +57,9 @@ START_EA                         *OPCODE coming in
     
 bin0 * 12 bit      
   JSR     mode_test         * tests source mode/reg
-  
   LEA     STR_COMMA,A6      * load  ,
   JSR     write_str         * write , to buff
-
   MOVE.W  D3,D6             * temp D3
-  
   LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
@@ -77,8 +74,8 @@ bin0 * 12 bit
   RTS                       * return to OPCODER
 
 bin1 * 6 bit
-  JSR     mode_test
-  RTS                       *return to OPCODER
+  JSR     mode_test         * test mode/reg write to buff 
+  RTS                       * return to OPCODER
   
 bin2 * 9 bit Data <ea>,Dn
   JSR     mode_test
@@ -107,26 +104,26 @@ bin3 * 9 bit Data w/Direction
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   JSR     reg_sum           * sum reg bits
 
-  LEA     STR_COMMA,A6      * load  ,
-  JSR     write_str         * write , to buff
+  JSR     write_comma       * write , to buff
 
   MOVE.W  D7,D3             * restore D3
   JSR     mode_test         * print destination
   RTS                       * return to OPCODER
 
 bin4 * 8 bit branch displacment
-  LEA     STR_IMM,A6        * load  #
-  JSR     write_str         * write # to buff
   LEA     STR_$,A6          * load  $  
   JSR     write_str         * write $ to buff  
   
-  CMP.B   #$00,D3           * if 0
+  CMP.B   #$00,D3           * if $00 read word
   BEQ     read_word
-  CMP.B   #$FF,D3
+  CMP.B   #$FF,D3           * if $FF read long  
   BEQ     read_long
-  MOVE.W  #$00FF,D7
-  AND.W   D7,D3
-  BRA     read_word
+  MOVE.W  #$00FF,D1         * bitmask to reuse word logic
+  AND.W   D3,D1             * bitmasked keeps LSByte
+  
+  MOVE.W  #$000F,D6         * nibble bit mask const  
+  MOVE.W  #3,D7             * nibble counter  
+  JSR     word_loop         * write hex word from left->right
   RTS 
 bin5 * Special rotation (12 bit)
 
@@ -136,31 +133,29 @@ bin6 * SUBQ (special case)
   JSR     write_str         * write #
   MOVE.W  #$0E00,D5         * bit mask data bits
   AND.W   D5,D3             
-  CMP.W   #0,D3             *
+  CMP.W   #0,D3             * if not zero calculate value  
   BNE     shift
-              
-  MOVE.B  #$38,(A2)+
-  JSR     write_comma
+                            * data = 000 -> 8
+  MOVE.B  #$38,(A2)+        * place hex aschii 8 into buffer
+  JSR     write_comma       * write comma
   MOVE.W  D7,D3             * restore D3
-  JSR     mode_test
+  JSR     mode_test         * test mode/reg
   RTS
 
-shift
+shift                       * data != 0 -> (1-7)
   LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   JSR     reg_sum           * sum reg bits
   JSR     write_comma       * write comma
-  MOVE.W  D7,D3
+  MOVE.W  D7,D3             * restore
   JSR     mode_test
   RTS 
     
 bin7 * MOVEM (6 bit w/Direction)
 
 bin8 * 9 bit Address
-  JSR     mode_test
-
-  LEA     STR_COMMA,A6      * load  ,
-  JSR     write_str         * write , to buff
+  JSR     mode_test         * test mode/reg
+  JSR     write_comma       * write ,
   LEA     STR_A,A6          * load  A
   JSR     write_str         * write A to buff
 
@@ -169,7 +164,8 @@ bin8 * 9 bit Address
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
   AND.W   D5,D3             * keep only 3 LSB
   JSR     reg_sum           * sum reg bits
-  RTS                       * return to OPCODER  
+  RTS                       * return to OPCODER
+                        
 bin9  * just like 2 but Dn,<ea>
   MOVE.W  D3,D7             * save temp
   LEA     STR_D,A6          * load  D
@@ -184,9 +180,13 @@ bin9  * just like 2 but Dn,<ea>
   JSR     write_str         * write , to buff
   MOVE.W  D7,D3             * restore orig
   JSR     mode_test         * test orginal
-  RTS                       *return to OPCODER
+  RTS                       * return to OPCODER
 
 bin10 * 6 bit w/immediate
+  JSR     reg100            * jump straight to imm register for print
+  JSR     write_comma       * write comma
+  JSR     mode_test         * test mode/reg write to buff
+  RTS
 
 **Function finds mode than calls reg_test than returns back to Bin caller 
 mode_test
@@ -331,7 +331,7 @@ word_loop
 read_long                       * proccess long after instruction
   MOVE.L    (A0)+,D1            * read next long            
   MOVE.W    #$000F,D6           * init bit mask
-  MOVE.B    #7,D7               * init nibble counter
+  MOVE.W    #7,D7               * init nibble counter
 long_loop
   ROL.L     #4,D1               * rot MS nibble to LS nibble
   MOVE.L    D1,D2               * save D1
@@ -362,3 +362,8 @@ STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
 
+
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~
