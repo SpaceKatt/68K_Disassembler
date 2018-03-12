@@ -246,7 +246,7 @@ O_ORI      MOVE.W    #10,EA_FLAG      * Load flag for EA
 O_BCLR     BTST      #8,D1           * Delineate between versions of BCLR
            BEQ       O_BCLR_2        * "Weird" BCLR
 
-           MOVE.W    #2,EA_FLAG      * Load flag for EA
+           MOVE.W    #10,EA_FLAG      * Load flag for EA
 WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
            JSR       WRITE_ANY
            
@@ -417,7 +417,7 @@ O_SUB      MOVE.W    #3,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** CMP ****************************************************************
-O_CMP      MOVE.W    #3,EA_FLAG      * Load flag for EA
+O_CMP      MOVE.W    #2,EA_FLAG      * Load flag for EA
            LEA       STR_CMP,A6      * Load CMP string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -425,7 +425,7 @@ O_CMP      MOVE.W    #3,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** EOR ****************************************************************
-O_EOR      MOVE.W    #3,EA_FLAG      * Load flag for EA
+O_EOR      MOVE.W    #9,EA_FLAG      * Load flag for EA
            LEA       STR_EOR,A6      * Load EOR string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -701,6 +701,7 @@ API_A2     DC.W      $0
                      ** NOP/RTS
 CON_NOP    DC.W      $4E71
 CON_RTS    DC.W      $4E75
+CON_SIMHLT DC.W      $FFFF
 
                      ** MASKS
 MASK_12_15 DC.W      $F000           * Mask for the bits from X to Y for _X_Y
@@ -797,7 +798,7 @@ STR_LONG   DC.B      'L',0
 *TEST_FLAG  DC.W      $0
 *TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-           NOP
+           NOP  *** THIS IS NEEDED, ELSE EA MODULE CAN ORG AT NONWORD ALIGNED
            INCLUDE   "eamodes_SaamAmiri.x68"
 
            END       START                    * last line of source
