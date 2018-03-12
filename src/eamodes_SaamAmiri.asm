@@ -4,20 +4,20 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
-STACK      EQU     $8000  
+*STACK      EQU     $8000  
 CR         EQU     $0D            * Carriage return
 LF         EQU     $0A            * Line feed
 
-         ORG       $1000
-START:                           * first instruction of program
-  LEA     STACK,SP
-  *MOVE.B  #$3,D2
-  *MOVE.W  #$3308,D3
-  MOVE.B   #$6,D2
-  MOVE.W   #$0F08,D3
-  JSR      START_EA
- 
-  SIMHALT
+*         ORG       $1000
+*START:                           * first instruction of program
+*  LEA     STACK,SP
+*  *MOVE.B  #$3,D2
+*  *MOVE.W  #$3308,D3
+*  MOVE.B   #$6,D2
+*  MOVE.W   #$0F08,D3
+*  JSR      START_EA
+* 
+*  SIMHALT
   
 START_EA                         *OPCODE coming in
   CMP     #0,D2
@@ -289,7 +289,7 @@ write_comma
 read_word                       * proccess word after instruction
   MOVE.W    (A0)+,D1            * read next word
   MOVE.W    #$000F,D6           * init bit mask
-  MOVE.B    #3,D7               * init nibble counter
+  MOVE.W    #3,D7               * init nibble counter
 word_loop
   ROL.W     #4,D1
   MOVE.W    D1,D2
@@ -311,10 +311,10 @@ long_loop
   AND.W     D6,D2
   MOVEA.W   D2,A6
   MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
-  DBF       D7,word_loop
+  DBF       D7,long_loop
   RTS
 
-END      SIMHALT
+*END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
 
@@ -322,7 +322,7 @@ END      SIMHALT
 SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
            DC.B      '9','A','B','C','D','E','F'
 
-GOODBUFF   DC.B      $00
+*GOODBUFF   DC.B      $00
 
 STR_IMM    DC.B      '#',0
 STR_$      DC.B      '$',0
@@ -335,10 +335,4 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
-
-
-
-
-
-
 

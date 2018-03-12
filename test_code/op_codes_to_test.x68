@@ -11,13 +11,15 @@ LF         EQU       $0A            * Line feed
            ORG       $400
 START:                              * first instruction of program
 ******************** Start*****************************************************
+           MOVE.B    #94,$4035
+           MOVE.B    D0,$8459
+
            MOVE.B    D0,D3
            MOVE.B    #$12,D3
            MOVE.B    D7,(A3)
            MOVE.B    D4,(A3)+
            MOVE.B    D1,-(A3)
-           MOVE.B    D0,$8459
-           MOVE.B    #94,$4035
+
 
            MOVE.W    D0,D3
            MOVE.W    #$12,D3
@@ -61,6 +63,7 @@ END        MOVE.B    #9,D0          * Break out of sim
 ******************** Put variables and constants here *************************
 
     END    START                    * last line of source
+
 
 
 *~Font name~Courier~

@@ -11,7 +11,7 @@ LF         EQU       $0A             * Line feed
 *
 *           ORG       $1000
 *START:                               * first instruction of program
-********************* Start*****************************************************
+********************* Start****************************************************
 *TEST_START LEA       STACKPTRE,SP
 *           LEA       TEST_OP,A0
 *           MOVE.B    TEST_FLAG,D0
@@ -561,7 +561,7 @@ PREP_EA    JSR       SPACE_FILL
            MOVE.W    SIZE_OP,D4
            MOVE.W    #0,D0
 
-**           JSR       START_EA
+           JSR       START_EA
            JSR       EA_VALID
            BRA       PREP_RET
 
@@ -781,7 +781,8 @@ STR_LONG   DC.B      'L',0
 *TEST_FLAG  DC.W      $0
 *TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-*           INCLUDE   tester_eamodes_SaamAmiri.x68
+           NOP
+           INCLUDE   "eamodes_SaamAmiri.asm"
 
            END       START                    * last line of source
 
