@@ -115,7 +115,19 @@ bin3 * 9 bit Data w/Direction
   RTS                       * return to OPCODER
 
 bin4 * 8 bit branch displacment
-
+  LEA     STR_IMM,A6        * load  #
+  JSR     write_str         * write # to buff
+  LEA     STR_$,A6          * load  $  
+  JSR     write_str         * write $ to buff  
+  
+  CMP.B   #$00,D3           * if 0
+  BEQ     read_word
+  CMP.B   #$FF,D3
+  BEQ     read_long
+  MOVE.W  #$00FF,D7
+  AND.W   D7,D3
+  BRA     read_word
+  RTS 
 bin5 * Special rotation (12 bit)
 
 bin6 * SUBQ (special case)
@@ -337,7 +349,6 @@ END      SIMHALT
 SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
            DC.B      '9','A','B','C','D','E','F'
 
-*GOODBUFF   DC.B      $00
 
 STR_IMM    DC.B      '#',0
 STR_$      DC.B      '$',0
