@@ -103,6 +103,129 @@ BRA_N      DIVS.W    D1,D2
            CMP.L     -(A1),D2
 
            ********* BIN 3 ***************
+           OR.B     D1,D1
+           OR.B     #$A,D4
+           OR.B     $88,D2
+           OR.B     $FFF88,D2
+           OR.B     (A1),D7
+           OR.B     (A1)+,D2
+           OR.B     -(A1),D5
+           OR.W     D1,D1
+           OR.W     #$A,D4
+           OR.W     $88,D2
+           OR.W     $FFF88,D2
+           OR.W     (A1),D7
+           OR.W     (A1)+,D2
+           OR.W     -(A1),D5
+           OR.L     D1,D1
+           OR.L     #$A,D4
+           OR.L     $88,D2
+           OR.L     $FFF88,D2
+           OR.L     (A1),D7
+           OR.L     (A1)+,D2
+           OR.L     -(A1),D5
+           
+           OR.B     D1,D1
+           OR.B     D2,$88
+           OR.B     D2,$FFF88
+           OR.B     D7,(A1)
+           OR.B     D2,(A1)+
+           OR.B     D5,-(A1)
+           OR.W     D1,D1
+           OR.W     D2,$88
+           OR.W     D2,$FFF88
+           OR.W     D7,(A1)
+           OR.W     D2,(A1)+
+           OR.W     D5,-(A1)
+           OR.L     D1,D1
+           OR.L     D2,$88
+           OR.L     D2,$FFF88
+           OR.L     D7,(A1)
+           OR.L     D2,(A1)+
+           OR.L     D5,-(A1)
+
+           SUB.B     D1,D1
+           SUB.B     #$A,D4
+           SUB.B     $88,D2
+           SUB.B     $FFF88,D2
+           SUB.B     (A1),D7
+           SUB.B     (A1)+,D2
+           SUB.B     -(A1),D5
+           SUB.W     D1,D1
+           SUB.W     #$A,D4
+           SUB.W     $88,D2
+           SUB.W     $FFF88,D2
+           SUB.W     (A1),D7
+           SUB.W     (A1)+,D2
+           SUB.W     -(A1),D5
+           SUB.L     D1,D1
+           SUB.L     #$A,D4
+           SUB.L     $88,D2
+           SUB.L     $FFF88,D2
+           SUB.L     (A1),D7
+           SUB.L     (A1)+,D2
+           SUB.L     -(A1),D5
+         
+           SUB.B     D1,D1
+           SUB.B     D2,$88
+           SUB.B     D2,$FFF88
+           SUB.B     D7,(A1)
+           SUB.B     D2,(A1)+
+           SUB.B     D5,-(A1)
+           SUB.W     D1,D1
+           SUB.W     D2,$88
+           SUB.W     D2,$FFF88
+           SUB.W     D7,(A1)
+           SUB.W     D2,(A1)+
+           SUB.W     D5,-(A1)
+           SUB.L     D1,D1
+           SUB.L     D2,$88
+           SUB.L     D2,$FFF88
+           SUB.L     D7,(A1)
+           SUB.L     D2,(A1)+
+           SUB.L     D5,-(A1)
+ 
+           ADD.B     D1,D1
+           ADD.B     #$A,D4
+           ADD.B     $88,D2
+           ADD.B     $FFF88,D2
+           ADD.B     (A1),D7
+           ADD.B     (A1)+,D2
+           ADD.B     -(A1),D5
+           ADD.W     D1,D1
+           ADD.W     #$A,D4
+           ADD.W     $88,D2
+           ADD.W     $FFF88,D2
+           ADD.W     (A1),D7
+           ADD.W     (A1)+,D2
+           ADD.W     -(A1),D5
+           ADD.L     D1,D1
+           ADD.L     #$A,D4
+           ADD.L     $88,D2
+           ADD.L     $FFF88,D2
+           ADD.L     (A1),D7
+           ADD.L     (A1)+,D2
+           ADD.L     -(A1),D5
+         
+           ADD.B     D1,D1
+           ADD.B     D2,$88
+           ADD.B     D2,$FFF88
+           ADD.B     D7,(A1)
+           ADD.B     D2,(A1)+
+           ADD.B     D5,-(A1)
+           ADD.W     D1,D1
+           ADD.W     D2,$88
+           ADD.W     D2,$FFF88
+           ADD.W     D7,(A1)
+           ADD.W     D2,(A1)+
+           ADD.W     D5,-(A1)
+           ADD.L     D1,D1
+           ADD.L     D2,$88
+           ADD.L     D2,$FFF88
+           ADD.L     D7,(A1)
+           ADD.L     D2,(A1)+
+           ADD.L     D5,-(A1)
+
            ********* BIN 5 ***************
            ********* BIN 6 ***************
            ********* BIN 7 ***************
@@ -110,6 +233,18 @@ BRA_N      DIVS.W    D1,D2
            ********* BIN 9 ***************
            ********* BIN 10 **************
            BCLR      #1,D4
+           BCLR      #3,(A4)
+           BCLR      #3,(A4)+
+           BCLR      #7,-(A4)
+           BCLR      #8,$FF302
+
+           BCLR      D1,D4
+           BCLR      D3,(A4)
+           BCLR      D3,(A4)+
+           BCLR      D7,-(A4)
+           BCLR      D5,$302
+           BCLR      D5,$30243
+
            ORI.W     #10,D2
            CMPI.L    #14,D1
 ********** All of this causes error, for now (well, only ROR)
