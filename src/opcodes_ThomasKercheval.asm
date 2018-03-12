@@ -305,7 +305,7 @@ O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** JSR ****************************************************************
-O_JSR      MOVE.W    #10,EA_FLAG      * Load flag for EA
+O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
            LEA       STR_JSR,A6      * Load NEG string into A6
            JSR       WRITE_ANY       * Write op
            MOVE.W    #2,SIZE_OP      * Tell EA to grab a long
@@ -567,11 +567,27 @@ PREP_EA    JSR       SPACE_FILL
 
 *******************************************************************************
 ******************** Prepare for return to IO *********************************
-PREP_RET   RTS * TODO
+PREP_RET   NOP 
+         * CLEAR ALL DATA REGISTERS
+           CLR.L     D1
+           CLR.L     D2
+           CLR.L     D3
+           CLR.L     D4
+           CLR.L     D5
+           CLR.L     D6
+           CLR.L     D7
+         * CLEAR NON-API ADDRESS REGISTERS
+           MOVEA.L   #0,A1
+           MOVEA.L   #0,A3
+           MOVEA.L   #0,A4
+           MOVEA.L   #0,A5
+           MOVEA.L   #0,A6
+           RTS
 
 *******************************************************************************
 ******************** Invalid opcode handling **********************************
-INVALID_OP RTS * TODO
+INVALID_OP MOVE.L    #1,D0           * Load flag for invalid input
+           RTS
 
 *******************************************************************************
 ******************** EA buffer address return validation **********************
