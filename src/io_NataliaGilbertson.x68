@@ -104,7 +104,7 @@ loopPrintLines  CMP.L   A3,A0                   * while pointerToNextOpcode <= e
         
 noFlagSet       MOVE.B  #0,(A2)+                * null terminate the string stored at (A2)
                 
-        JSR     OutputTheBuffer
+                JSR     OutputTheBuffer
         
         *********************** REMOVE THIS LINE WHEN INTEGRATING *******************************
                 ****ADDA    #2,A0   *MOCK opcodes + EA reading a word
@@ -113,7 +113,7 @@ noFlagSet       MOVE.B  #0,(A2)+                * null terminate the string stor
        
 *******************************************************************************
 ******************** FIN ******************************************************    
-endProg     STOP    #3000
+endProg         STOP    #3000
 
 *******************************************************************************
 ******************** Errors ***************************************************
@@ -240,7 +240,7 @@ OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for p
                         SUBA    OutputBuffer,A5           * subtract the address of the beginning of the output buffer
                               * from the address of the current pointer in the output buffer
                         MOVE.W  A5,D1                     * this results in the number of characters in the buffer to print out
-            TRAP    #15                                   * which is stored in D1, telling TRAP how much to print
+                        TRAP    #15                       * which is stored in D1, telling TRAP how much to print
                       
                         RTS
 
