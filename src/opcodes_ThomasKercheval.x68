@@ -321,9 +321,9 @@ O_MOVEM    MOVE.W    #7,EA_FLAG      * Load flag for EA
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY
 
-           MOVE.W    D1,D6           * Must test bit 6 for size flag
+           MOVE.W    D1,D6           * Must test bit 6 for size flag test
            LSR.W     #6,D6           * Shift 6th bit into least sig postition
-           JSR       SINGLE_SZ       * MOVEM has one size flag
+           JSR       SINGLE_SZ       * MOVEM has one size flag, test it
            JSR       WRITE_ANY
 
            BRA       PREP_EA
@@ -474,25 +474,19 @@ O_ADDA     MOVE.W    #8,EA_FLAG      * Load flag for EA
 *******************************************************************************
 ********** LSd ****************************************************************
 O_LSd      LEA       STR_LSR,A6      * Load LSR into A6
-           JSR       DIR_UTIL
-           JSR       WRITE_ANY
-
-           JSR       SIZE_UTIL
-           BRA       PREP_EA
+           BRA       ALLSHFTROT
 
 *******************************************************************************
 ********** ASd ****************************************************************
 O_ASd      LEA       STR_ASR,A6      * Load ASR into A6
-           JSR       DIR_UTIL
-           JSR       WRITE_ANY
-
-           JSR       SIZE_UTIL
-           BRA       PREP_EA
+           BRA       ALLSHFTROT
 
 *******************************************************************************
 ********** ROd ****************************************************************
 O_ROd      LEA       STR_ROR,A6      * Load ROR into A6
-           JSR       DIR_UTIL
+
+  ******** UTILITY TO DO EVERYTHING FOR ROTATIONS
+ALLSHFTROT JSR       DIR_UTIL
            JSR       WRITE_ANY
 
            JSR       SIZE_UTIL
