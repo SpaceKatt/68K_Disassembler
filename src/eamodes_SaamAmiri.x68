@@ -5,11 +5,11 @@
 * Description:
 *-----------------------------------------------------------
 STACK      EQU     $8000  
-CR         EQU     $0D            * Carriage return
-LF         EQU     $0A            * Line feed
+CR         EQU     $0D      * Carriage return
+LF         EQU     $0A      * Line feed
 
          ORG       $1000
-START:                           * first instruction of program
+START:                      * first instruction of program
   LEA     STACK,SP
   *MOVE.B  #3,D2
   *MOVE.W  #$3308,D3
@@ -19,7 +19,7 @@ START:                           * first instruction of program
  
   SIMHALT
   
-START_EA                         *OPCODE coming in
+START_EA                    *OPCODE coming in
   CMP     #0,D2
   BEQ     bin0
 
@@ -152,6 +152,41 @@ shift                       * data != 0 -> (1-7)
   RTS 
     
 bin7 * MOVEM (6 bit w/Direction)
+  BTST    #10,D3             * check direction bit
+  BEQ     flip               * Bit tested = 0 -> (<list>,EA)  
+  
+  JSR     mode_test          * Bit tested = 1 -> (EA,<list>)
+  JSR     write_comma
+  MOVE.B  #0,D0              * init counter
+  LEA     STR_DA,A4          * currently points at D
+  JSR     reg_list           * proccess LS Byte registers
+  
+  MOVE.B  #0,D0              * init counter
+  ADDA.W  #2,A4              * points at A
+  CMP.B   #$00,D3            * check if no reg full
+  BEQ     no_slash           * empty D regs no / needed
+  LEA     str_slash,A6       * load  /
+  JSR     write_str          * write /
+      
+no_slash
+  LSR.W   #8,D3
+  JSR     reg_list
+  RTS  
+
+
+
+flip
+  MOVE.B #0,D0              * init counter
+  LEA    STR_DA,A4          * currently points at D
+  JSR    reg_list
+  
+  
+  JSR    write_comma
+  JSR    mode_test
+   
+
+  
+
 
 bin8 * 9 bit Address
   JSR     mode_test         * test mode/reg
@@ -207,9 +242,8 @@ mode0
   BNE    mode01
   BRA    mode00
   
-mode11                      * assume mode 11->111
-  *test register for (xxx).W,(xxx).L,#imm
-  BTST   #2,D3
+mode11 * assume mode 11->111
+  BTST   #2,D3              * test register for (xxx).W,(xxx).L,#imm
   BNE    reg100             * assume if 1 -> 100 = #imm
   BRA    reg00              * assume if 0 -> 00
   
@@ -297,12 +331,51 @@ reg_sum
   MOVE.W     #$0007,D6          * bitmask keep 3 LSB
   AND.W      D3,D6              * store D3 bitmasked bits to D6
   MOVEA.W    D6,A5              * prepare for index
-  MOVE.B    (SUMTABLE,A5),(A2)+ *store ascii at index to goodbuff 
-  RTS                           *return to caller
+  MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff 
+  RTS                           * return to caller
 
+reg_list
+  BTST      D0,D3
+  BNE       full_reg            * bit contains 1
+  BEQ       empty_reg           * bit contains 0
+      
+
+full_reg
+  MOVE.B    (A4),(A2)+
+  MOVEA.W    D0,A5              * prepare for index
+  MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff
+  ADDQ      #1,D0               * increment counter
+  BTST      D0,D3             
+  BNE       hyphen              * bit = 1 
+  BEQ       slash               * bit = 0
+    
+hyphen  *complete i-- stuff
+  LEA       STR_hyphen,A6
+  JSR       write_str
+  
+slash
+  ADDQ      #1,D0              * inc counter
+  CMP.B     #8,D0              * check bounds
+  BEQ       return             * return
+  BTST      D0,D3              * test bit
+  BEQ       slash              * bit = 0 loop
+  LEA       STR_SLASH,A6       * bit = 1 write slash
+  JSR       write_str
+  BRA       full_reg           *             
+
+empty_reg 
+  ADDQ      #1,D0               * incrmeent counter
+  CMP.B     #8,D0               * check out of range
+  BEQ       return              * counter = range 
+  BRA       reg_list            * continue
+  
+  
+return
+  RTS  
+  
 *Function write string to the buffer
 write_str  
-  CMPI.B    #0,(A6)             * Is the byte at A6 the NULL Char?
+  CMPI.B    #0,(A6)             * is the byte at A6 the NULL Char?
   BEQ       write_done          * null terminated?
   MOVE.B    (A6)+,(A2)+         * increment string and buffer 
   BRA       write_str           
@@ -352,8 +425,12 @@ SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
 
 STR_IMM    DC.B      '#',0
 STR_$      DC.B      '$',0
+STR_SLASH  DC.B      '/',0
+STR_HYPHEN DC.B      '-',0
 STR_D      DC.B      'D',0
 STR_A      DC.B      'A',0
+
+STR_DA     DC.B      'D','A',0
 
 STR_INDA   DC.B      '(','A',0
 STR_DECA   DC.B      '-','(','A',0 
@@ -361,6 +438,8 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
+
 
 
 *~Font name~Courier New~
