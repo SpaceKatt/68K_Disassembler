@@ -119,6 +119,9 @@ O_ZERO     BTST      #13,D1          * Test third MSB
            BEQ       O_Z_ZERO        * DIVS OR SUB
 
            **  CMP EOR
+           BTST      #12,D1          * Both of these have 1 in bit 12
+           BEQ       INVALID_OP      * Else are invalid
+
            BTST      #8,D1           * This is pretty obvious
            BNE       O_EOR
 
@@ -140,7 +143,10 @@ O_Z_ZERO   BTST      #12,D1          * Test fourth MSB
  ******************************************************************************
  *  LSR ASR ROR LSL ASL ROL
  ******************************************************************************
-ROTATEZ    BTST      #8,D1           * Determines direction
+ROTATEZ    BTST      #12,D1          * All of these opcodes should have 0 here
+           BNE       INVALID_OP      * Else, are invalid
+           
+           BTST      #8,D1           * Determines direction
            BEQ       GO_RIGHT
            MOVE.W    #1,D7           * Lets say 0 is R and 1 is left
            BRA       CONT_ROTZ
@@ -207,7 +213,10 @@ Z_ONE_SU   MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
  ******************************************************************************
  * BRA BCS BVC BGE BLT
  ******************************************************************************
-BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
+BRANCHZ    BTST      #12,D1          * Should be 0
+           BNE       INVALID_OP      * Else, not a branch
+
+           MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            AND.W     D1,D2           * MASK bits
            CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
            BEQ       O_BRA
@@ -243,7 +252,12 @@ O_ORI      MOVE.W    #10,EA_FLAG     * Load flag for EA
 
 *******************************************************************************
 ********** BCLR ***************************************************************
-O_BCLR     BTST      #8,D1           * Delineate between versions of BCLR
+O_BCLR     MOVE.W    MASK_6_7,D2     * Load mask for validation
+           AND.W     D1,D2           * Mask bits 6-7 in opcode
+           CMPI.W    #$0080,D2       * Should be %10, else invalid
+           BNE       INVALID_OP      * If invalid, exit
+
+           BTST      #8,D1           * Delineate between versions of BCLR
            BEQ       O_BCLR_2        * "Weird" BCLR
 
            MOVE.W    #9,EA_FLAG      * Load flag for EA
@@ -256,6 +270,10 @@ WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
 *******************************************************************************
 ********** BCLR version 2 *****************************************************
 O_BCLR_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
+           MOVE.W    MASK_8_11,D2     * Load mask for validation
+           AND.W     D1,D2            * Mask bits, should be %1000 for BCLR
+           CMPI.W    #$0800,D2
+           BNE       INVALID_OP       * Else, are invalid
 
            BRA       WR_BCLR         * Everything other than EA flag is same
 
@@ -279,6 +297,8 @@ O_MOVEA    MOVE.W    #0,EA_FLAG      * Load flag for EA
 
            CMP.W     #0,SIZE_OP      * MOVEA cannot be a byte
            BEQ       INVALID_OP
+           CMP.W     #-5,SIZE_OP     * MOVEA must have valid size
+           BEQ       INVALID_OP
 
            JSR       WRITE_ANY
            BRA       PREP_EA
@@ -293,6 +313,9 @@ O_MOVE     MOVE.W    #0,EA_FLAG      * Load flag for EA
            JSR       WRITE_ANY
 
            JSR       GET_MV_SZ
+           CMP.W     #-5,SIZE_OP     * MOVE must have valid size
+           BEQ       INVALID_OP
+
            JSR       WRITE_ANY
            BRA       PREP_EA
 
@@ -307,6 +330,11 @@ O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
 *******************************************************************************
 ********** JSR ****************************************************************
 O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
+           MOVE.W    MASK_6_7,D2     * Load mask for validation
+           AND.W     D1,D2           * Mask bits 6-7
+           CMPI.W    #$0080,D2       * Should be %10
+           BNE       INVALID_OP      * Else, invalid
+
            LEA       STR_JSR,A6      * Load NEG string into A6
            JSR       WRITE_ANY       * Write op
            MOVE.W    #2,SIZE_OP      * Tell EA to grab a long
@@ -342,6 +370,8 @@ O_LEA      MOVE.W    #8,EA_FLAG      * Load flag for EA
 O_SUBQ     MOVE.W    #6,EA_FLAG      * Load flag for EA
            LEA       STR_SUBQ,A6     * Load SUBQ string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
+           BTST      #8,D1           * SUBQ has 1 in bit 8
+           BEQ       INVALID_OP      * If it is 0, then is invalid
 
            BRA       PREP_EA
 
@@ -434,10 +464,14 @@ O_EOR      MOVE.W    #9,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** MULS ***************************************************************
-O_MULS     MOVE.W    #2,EA_FLAG      * Load flag for EA
-           LEA       STR_MULS,A6     * Load ORI string into A6
+O_MULS     MOVE.W    MASK_6_8,D2     * Load mask for validation
+           AND.W     D1,D2           * Mask to check bits 6-8
+           CMPI.W    #$01C0,D2       * They should be %111
+           BNE       INVALID_OP      * Else, invalid op
+           
+           MOVE.W    #2,EA_FLAG      * Load flag for EA
+           LEA       STR_MULS,A6     * Load MULS string into A6
            JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
-* TODO validation
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY       * Write '.' to buffer
 
@@ -527,9 +561,14 @@ NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
            JSR       WRITE_ANY       * Write '.' to buffer
 
            JSR       GET_OP_SZ       * Get size of the op
+           CMPI.W    #-5,SIZE_OP     * -5 indicated invalid size
+           BEQ       EXIT_BAD        * Should have valid size, else exit
            JSR       WRITE_ANY       * Write size to buffer
 
            RTS                       * Return for opcode specific processing
+
+EXIT_BAD   ADDA.L    #4,SP           * Hacks to return to I/O module
+           RTS
 
 *******************************************************************************
 ******************** Prepare for Call to Saam *********************************
