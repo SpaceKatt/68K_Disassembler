@@ -235,7 +235,7 @@ BRANCHZ    MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 *******************************************************************************
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 ********** ORI ****************************************************************
-O_ORI      MOVE.W    #10,EA_FLAG      * Load flag for EA
+O_ORI      MOVE.W    #10,EA_FLAG     * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
            JSR       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -246,15 +246,16 @@ O_ORI      MOVE.W    #10,EA_FLAG      * Load flag for EA
 O_BCLR     BTST      #8,D1           * Delineate between versions of BCLR
            BEQ       O_BCLR_2        * "Weird" BCLR
 
-           MOVE.W    #10,EA_FLAG      * Load flag for EA
+           MOVE.W    #9,EA_FLAG      * Load flag for EA
 WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
            JSR       WRITE_ANY
+           MOVE.W    #1,SIZE_OP
            
            BRA       PREP_EA
 
 *******************************************************************************
 ********** BCLR version 2 *****************************************************
-O_BCLR_2   MOVE.W    #9,EA_FLAG      * Load flag for EA
+O_BCLR_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
 
            BRA       WR_BCLR         * Everything other than EA flag is same
 
