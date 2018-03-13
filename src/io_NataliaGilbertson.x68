@@ -216,7 +216,10 @@ endMethodACATB          MOVE.B  #$20,(A2)+
                         
 * handles problems encountered by opcodes and effective addressing for the output buffer
 * the bad flag is stored at D0                        
-HandleBadFlag           * reset the flag
+HandleBadFlag           LEA     OutputBuffer,A2           * reset the output buffer to overwrite any bad data
+                        ADDA    #12,A2                    * don't overwrite the address location which is already in there
+
+                        * reset the flag
                         MOVE.B  #0,D0
                         
                         * put 'DATA' into the output buffer
@@ -291,6 +294,7 @@ OutputBuffer            DCB.B   80,0
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
+
 
 
 
