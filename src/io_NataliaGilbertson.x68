@@ -17,7 +17,11 @@ START:                          * first instruction of program
 ******************** Start*****************************************************
                 LEA     Stack,SP                * load stack pointer value (A7 is stack pointer)
                 
-                LEA     PromptStartAddr,A1      * load prompt to print, asking user for starting address
+                LEA     Welcome,A1              * print welcome message
+                MOVE.B  #14,D0
+                TRAP    #15
+                
+restart         LEA     PromptStartAddr,A1      * load prompt to print, asking user for starting address
                 MOVE.B  #14,D0                  * print string at A1 to console
                 TRAP    #15
     
@@ -70,6 +74,10 @@ START:                          * first instruction of program
                 MOVE.L  #0,A5
                 MOVE.L  #0,A6
             
+                LEA     PromptToPressENTER,A1   * prompt user to press ENTER for next page of data
+                MOVE.B  #14,D0
+                TRAP    #15
+
 **************************************** printing out disassembled code ********************************************            
 waitForENTER    MOVE.L  #0,D2                   * reset linesOutputted to 0
                 MOVE.B  #2,D0                   * trap task for reading input
@@ -113,7 +121,11 @@ noFlagSet       MOVE.B  #0,(A2)+                * null terminate the string stor
        
 *******************************************************************************
 ******************** FIN ******************************************************    
-endProg         STOP    #3000
+endProg         LEA     EOF,A1                * print end of file message
+                MOVE.B  #14,D0
+                TRAP    #15
+                
+                STOP    #3000                 * end program
 
 *******************************************************************************
 ******************** Errors ***************************************************
@@ -139,7 +151,7 @@ ThrowInputError LEA     InvalidInputError,A1  * load address that holds error st
                 MOVE.B  #0,D1
                 TRAP    #15
                 
-                BRA       START    
+                BRA     restart    
 
 *******************************************************************************
 ******************** Method ***************************************************
@@ -277,9 +289,12 @@ OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for p
 * string hashtable                      
 NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
 * prompts to user
-PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0
-* error messages 
+PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0 
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
+PromptToPressENTER      DC.B    'Press ENTER to get the next page of disassembled code.',0
+Welcome                 DC.B    'Welcome to our disassembler!',CR,LF,'Created by Sexy8k: [Natalia Gilbertson][Thomas Kercheval][Saam Amiri]',CR,LF,'Please load your file into memory.',CR,LF,CR,LF,0
+EOF                     DC.B    '~ End of file ~',0
+* error message
 InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
 
 StoreInputStartAddr     DC.L    0   * each address needs 8 bytes to be read into memory 
@@ -294,6 +309,7 @@ OutputBuffer            DCB.B   80,0
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
+
 
 
 
