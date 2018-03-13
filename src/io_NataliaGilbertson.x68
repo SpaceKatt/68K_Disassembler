@@ -9,8 +9,8 @@
 CR              EQU       $0D   * Carriage return
 LF              EQU       $0A   * Line feed
 Stack           EQU       $8000 * where the stack pointer begins
-PageOfOutput    EQU       80    * how many lines of disassembled code is printing
-                * when the user presses ENTER
+PageOfOutput    EQU       20    * how many lines of disassembled code is printing
+                                * when the user presses ENTER
 
            ORG       $1000
 START:                          * first instruction of program
@@ -78,19 +78,19 @@ waitForENTER    MOVE.L  #0,D2                   * reset linesOutputted to 0
 loopPrintLines  CMP.L   A3,A0                   * while pointerToNextOpcode <= ending address
                 BGT     endProg
            
-                CMP.L   #20,D2                  * stop printing when linesOutputted == 80
+                CMP.L   #PageOfOutput,D2        * stop printing when linesOutputted == linesInAPage
                 BEQ     waitForENTER            * go back to waiting for ENTER from user
                 ADD.B   #1,D2                   * increment linesOutputted
               
-        * prepare to call opcodes
+                * prepare to call opcodes
                 LEA     OutputBuffer,A2         * set output buffer to A2    
                 MOVEA.L A0,A6                   * track current pointerToNextOpcode in case bad flag is set
 
                 JSR     AddCurrAddressToBuffer  * put current address into the output buffer
                 
                 MOVEM.L D1-D7/A1/A3-A6,-(SP)    * save all registers except A0 (pointerToNextOpcode),
-                          *               A2 (output buffer pointer),
-                          *             D0 (bad flag)
+                                                *                           A2 (output buffer pointer),
+                                                *                           D0 (bad flag)
                 MOVE.B  #0,D0                   * clear bad flag
                 
         ****************************CALL OPCODES HERE*******************************************
@@ -117,12 +117,29 @@ endProg         STOP    #3000
 
 *******************************************************************************
 ******************** Errors ***************************************************
-ThrowInputError LEA       InvalidInputError,A1  * load address that holds error string
-                MOVE.B    #14,D0                * print the string
-                TRAP      #15
-
-END             MOVE.B    #9,D0                 * break out of sim
-                TRAP      #15
+ThrowInputError LEA     InvalidInputError,A1  * load address that holds error string
+                MOVE.B  #0,D0                 * print the string
+                MOVE.B  #155,D1
+                TRAP    #15
+                
+                CLR.L   D0
+                CLR.L   D1
+                CLR.L   D2
+                CLR.L   D4
+                CLR.L   D6
+                CLR.L   D7
+                MOVE.L  #0,A1
+                MOVE.L  #0,A4
+                MOVE.L  #0,A5
+                MOVE.L  #0,A6
+                
+                MOVE.B  #CR,(A1)+
+                MOVE.B  #LF,(A1)+
+                MOVE.B  #0,D0                 * print the string
+                MOVE.B  #0,D1
+                TRAP    #15
+                
+                BRA       START    
 
 *******************************************************************************
 ******************** Method ***************************************************
@@ -188,7 +205,7 @@ loopACATB               CMP.B   #8,D3                     * while not all 8 char
                         MOVEA   D5,A5                     * move the nibble in question into A5
                         MOVE.B  (NumbersToASCII,A5),(A2)+ * displace the nibble value into the string hashtable and put 
                         BRA     loopACATB                 * the hash result into the output buffer
-                              * do this for all characters in the address
+                                                          * do this for all characters in the address
                         
                         *Tab, put a full tab into the output buffer for output formatting
 endMethodACATB          MOVE.B  #$20,(A2)+
@@ -208,11 +225,17 @@ HandleBadFlag           * reset the flag
                         MOVE.B  #$54,(A2)+
                         MOVE.B  #$41,(A2)+
                         
-                        * put a tab into the output buffer
+                        * put space formatting into the output buffer
                         MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        MOVE.B  #$20,(A2)+
+                        
+                        * add the $ to the buffer to show the hex value
+                        MOVE.B  #$24,(A2)+
                         
                         * get the instruction word that could not be disassembled
                         MOVE.W  (A6),D1                   * A6 stores the saved pointerToNextOpcode before opcodes was called
@@ -238,7 +261,7 @@ OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for p
                         LEA     OutputBuffer,A1           * load output buffer into A1
                         MOVEA.L A2,A5                     * get the current pointer spot in the output buffer
                         SUBA    OutputBuffer,A5           * subtract the address of the beginning of the output buffer
-                              * from the address of the current pointer in the output buffer
+                                                          * from the address of the current pointer in the output buffer
                         MOVE.W  A5,D1                     * this results in the number of characters in the buffer to print out
                         TRAP    #15                       * which is stored in D1, telling TRAP how much to print
                       
@@ -248,11 +271,11 @@ OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for p
             
 *******************************************************************************
 ******************** variables and constants **********************************
-          * string hashtable                      
+* string hashtable                      
 NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
-          * prompts to user
+* prompts to user
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0
-          * error messages 
+* error messages 
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
 InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0        
 
@@ -261,10 +284,16 @@ StoreInputStartAddr2    DC.L    0   * so more space is built in
 StoreInputEndAddr       DC.L    0
 StoreInputEndAddr2      DC.L    0
 OutputBuffer            DCB.B   80,0
-                        
+
 *******************************************************************************
 *******************************************************************************
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
 
+
+
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~
