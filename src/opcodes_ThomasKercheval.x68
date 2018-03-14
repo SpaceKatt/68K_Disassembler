@@ -343,7 +343,14 @@ O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** MOVEM **************************************************************
-O_MOVEM    MOVE.W    #7,EA_FLAG      * Load flag for EA
+O_MOVEM    BTST      #11,D1          * 11th bit must be 1 for MOVEM
+           BEQ       INVALID_OP      * Else is invalid
+           MOVE.W    #$0380,D2       * Load mask for bits 7-9
+           AND.W     D1,D2           * Mask bits 7-9
+           CMPI      #$0080,D2       * Bits 7-9 should be %001
+           BNE       INVALID_OP      * Else, it is not MOVEM
+
+           MOVE.W    #7,EA_FLAG      * Load flag for EA
            LEA       STR_MOVEM,A6    * Load MOVEM string into A6
            JSR       WRITE_ANY
 
@@ -568,6 +575,7 @@ NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
            RTS                       * Return for opcode specific processing
 
 EXIT_BAD   ADDA.L    #4,SP           * Hacks to return to I/O module
+           MOVE.W    #1,D0           * Tell I/O that something bad happened
            RTS
 
 *******************************************************************************
