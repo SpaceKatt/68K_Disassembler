@@ -166,15 +166,18 @@ reg_set
   MOVE.W  (A0)+,D3           * grab reg bit masked word
   JSR     reg_list           * proccess LS Byte registers
 *next byte of register set
+  MOVE.B  #0,D0              * init counter
   CMP.B   #$00,D3            * check if no reg full
   BEQ     no_slash           * empty D regs no / needed
+   LSR.W   #8,D3              * shift A regs to D regs spot 7-0
+  CMP.W   #$00,D3            * compare MSByte to 0
+  BEQ     return             * next reg_list is empty RTS             
+
   LEA     str_slash,A6       * load  /
   JSR     write_str          * write /
 
 no_slash
-  MOVE.B  #0,D0              * init counter
-  ADDA.W  #2,A4              * points at 'A' will write A(D0)
-  LSR.W   #8,D3              * shift A regs to D regs spot 7-0
+  ADDA.W  #1,A4              * points at 'A' will write A(D0)
   JSR     reg_list           * calc A reg bitmask
   MOVE.B  #0,D0              * set good flag
   RTS                        * return to caller
@@ -458,6 +461,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 

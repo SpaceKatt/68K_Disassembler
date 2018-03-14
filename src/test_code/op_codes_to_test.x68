@@ -268,24 +268,24 @@ BRA_N      DIVS.W    D1,D2
            ADDQ.L     #6,-(A1)
 
            ********* BIN 7 ***************
-*           MOVEM.W   D0-D1/D3/D5-D7,(A7)
-*           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,(A7)
-*           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,(A7)
-*           MOVEM.W   A1-A3/A4/A6,(A7)
-*           MOVEM.W   D0/A1-A3/A4/A6,(A7)
-*           MOVEM.W   D7/A1-A3/A4/A6,(A7)
-*           MOVEM.W   A6,(A7)
-*           MOVEM.W   D6,(A7)
-*
-*           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
-*           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
-*           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
-*           MOVEM.W   A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   A6,-(A7)
-*           MOVEM.W   D6,-(A7)
-*           
+           MOVEM.W   D0-D1/D3/D5-D7,(A7)
+           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,(A7)
+           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,(A7)
+           MOVEM.W   A1-A3/A4/A6,(A7)
+           MOVEM.W   D0/A1-A3/A4/A6,(A7)
+           MOVEM.W   D7/A1-A3/A4/A6,(A7)
+           MOVEM.W   A6,(A7)
+           MOVEM.W   D6,(A7)
+
+           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
+           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
+           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
+           MOVEM.W   A1-A3/A4/A6,-(A7)
+           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
+           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
+           MOVEM.W   A6,-(A7)
+           MOVEM.W   D6,-(A7)
+           
 *           MOVEM.W   D0-D1/D3/D5-D7,$FE
 *           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,$FE
 *           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,$FE
