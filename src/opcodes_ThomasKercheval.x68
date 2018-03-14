@@ -217,24 +217,35 @@ Z_ONE_SU   MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
 BRANCHZ    BTST      #12,D1          * Should be 0
            BNE       INVALID_OP      * Else, not a branch
 
+           CLR.L     D2
            MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
-           AND.W     D1,D2           * MASK bits
-           CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
-           BEQ       O_BRA
+           AND.L     D1,D2           * MASK bits
+           LSR.L     #8,D2
+           MULS      #4,D2
+           MOVEA.W   D2,A6
 
-           CMPI.W    #$0500,D2       * Will set zero if 8-11 are 0101
-           BEQ       O_BCS
+           MOVE.W    #4,EA_FLAG      * Load flag for EA
+           LEA       (BRA_TABLE,A6),A6      * Load BRA string into A6
+           MOVEA.L   (A6),A6
+           **CHECK FOR NULL, BF does't make sense
 
-           CMPI.W    #$0800,D2       * Will set zero if 8-11 are 1000
-           BEQ       O_BVC
-
-           CMPI.W    #$0C00,D2       * Will set zero if 8-11 are 1100
-           BEQ       O_BGE
-
-           CMPI.W    #$0D00,D2       * Will set zero if 8-11 are 1101
-           BEQ       O_BLT
-
-           BRA       INVALID_OP      * Invalid opcode!
+           BRA       WR_PRP_EA
+*           CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
+*           BEQ       O_BRA
+*
+*           CMPI.W    #$0500,D2       * Will set zero if 8-11 are 0101
+*           BEQ       O_BCS
+*
+*           CMPI.W    #$0800,D2       * Will set zero if 8-11 are 1000
+*           BEQ       O_BVC
+*
+*           CMPI.W    #$0C00,D2       * Will set zero if 8-11 are 1100
+*           BEQ       O_BGE
+*
+*           CMPI.W    #$0D00,D2       * Will set zero if 8-11 are 1101
+*           BEQ       O_BLT
+*
+*           BRA       INVALID_OP      * Invalid opcode!
 
 *******************************************************************************
 ********** END Decision tree***************************************************
@@ -777,11 +788,6 @@ STR_ADD    DC.B      'ADD',0
 STR_ADDA   DC.B      'ADDA',0
 STR_BCLR   DC.B      'BCLR',0
 STR_BTST   DC.B      'BTST',0
-STR_BCS    DC.B      'BCS',0
-STR_BGE    DC.B      'BGE',0
-STR_BLT    DC.B      'BLT',0
-STR_BRA    DC.B      'BRA',0
-STR_BVC    DC.B      'BVC',0
 STR_CMP    DC.B      'CMP',0
 STR_ADDI   DC.B      'ADDI',0
 STR_SUBI   DC.B      'SUBI',0
@@ -811,6 +817,31 @@ STR_BYTE   DC.B      'B',0
 STR_WORD   DC.B      'W',0
 STR_LONG   DC.B      'L',0
 
+BRA_TABLE  DC.L      STR_BRA,STR_BF,STR_BHI,STR_BLS,STR_BCC,STR_BCS,STR_BNE
+           DC.L      STR_BEQ,STR_BVC,STR_BVS,STR_BPL,STR_BMI,STR_BGE,STR_BLT
+           DC.L      STR_BGT,STR_BLE
+
+*STR_BCS    DC.B      'BCS',0
+*STR_BGE    DC.B      'BGE',0
+*STR_BLT    DC.B      'BLT',0
+*STR_BRA    DC.B      'BRA',0
+*STR_BVC    DC.B      'BVC',0
+STR_BRA    DC.B      'BRE',0
+STR_BF     DC.B      0
+STR_BHI    DC.B      'BHI',0
+STR_BLS    DC.B      'BLS',0
+STR_BCC    DC.B      'BCC',0
+STR_BCS    DC.B      'BCS',0
+STR_BNE    DC.B      'BNE',0
+STR_BEQ    DC.B      'BEQ',0
+STR_BVC    DC.B      'BVC',0
+STR_BVS    DC.B      'BVS',0
+STR_BPL    DC.B      'BPL',0
+STR_BMI    DC.B      'BMI',0
+STR_BGE    DC.B      'BGE',0
+STR_BLT    DC.B      'BLT',0
+STR_BGT    DC.B      'BGT',0
+STR_BLE    DC.B      'BLE',0
 ******************** Test variables *******************************************
 *TEST_A0    DC.L      TEST_OP
 *TEST_OP    DC.W      $4E71       * NOP
