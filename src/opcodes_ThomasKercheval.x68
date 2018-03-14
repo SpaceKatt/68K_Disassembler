@@ -826,7 +826,7 @@ BRA_TABLE  DC.L      STR_BRA,STR_BF,STR_BHI,STR_BLS,STR_BCC,STR_BCS,STR_BNE
 *STR_BLT    DC.B      'BLT',0
 *STR_BRA    DC.B      'BRA',0
 *STR_BVC    DC.B      'BVC',0
-STR_BRA    DC.B      'BRE',0
+STR_BRA    DC.B      'BRA',0
 STR_BF     DC.B      0
 STR_BHI    DC.B      'BHI',0
 STR_BLS    DC.B      'BLS',0
