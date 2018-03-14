@@ -4,20 +4,20 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
-STACK      EQU     $8000  
-CR         EQU     $0D      * Carriage return
-LF         EQU     $0A      * Line feed
-
-         ORG       $1000
-START:                      * first instruction of program
-  LEA     STACK,SP
-  *MOVE.B  #3,D2
-  *MOVE.W  #$3308,D3
-  MOVE.B   #10,D2
-  MOVE.W   #$0107,D3
-  JSR      START_EA
- 
-  SIMHALT
+*STACK      EQU     $8000  
+*CR         EQU     $0D      * Carriage return
+*LF         EQU     $0A      * Line feed
+*
+*         ORG       $1000
+*START:                      * first instruction of program
+*  LEA     STACK,SP
+*  *MOVE.B  #3,D2
+*  *MOVE.W  #$3308,D3
+*  MOVE.B   #10,D2
+*  MOVE.W   #$0107,D3
+*  JSR      START_EA
+* 
+*  SIMHALT
   
 START_EA                    *OPCODE coming in
   CMP     #0,D2
@@ -52,7 +52,10 @@ START_EA                    *OPCODE coming in
 
   CMP     #10,D2
   BEQ     bin10  
-  BRA     END               * D2 not set to proper EA Flag
+
+  MOVE.W  #2,D0             * Set invalid flag
+  RTS                       * Return to OP-module
+  *BRA     END               * D2 not set to proper EA Flag
   
     
 bin0 * 12 bit      
@@ -431,7 +434,7 @@ long_loop
   DBF       D7,long_loop
   RTS
 
-END      SIMHALT
+*END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
 

@@ -194,8 +194,20 @@ Z_ONE_SU   MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
            BEQ       O_ORI           * ORI
 
+           CMPI.W    #$0200,D2       * Will be zero if 8-11 are 0010
+           BEQ       O_ANDI          * ANDI
+
+           CMPI.W    #$0400,D2       * Will be zero if 8-11 are 0100
+           BEQ       O_SUBI          * SUBI
+
+           CMPI.W    #$0600,D2       * Will be zero if 8-11 are 0110
+           BEQ       O_ADDI          * ADDI
+
+           CMPI.W    #$0A00,D2       * Will be zero if 8-11 are 1010
+           BEQ       O_EORI          * EORI
+
            CMPI.W    #$0C00,D2       * Will be zero if 8-11 are 1100
-           BEQ       O_CMPI          * ORI
+           BEQ       O_CMPI          * CMPI
 
            BRA       O_BCLR
 
@@ -262,6 +274,30 @@ O_BCLR_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
            BNE       INVALID_OP       * Else, are invalid
 
            BRA       WR_BCLR         * Everything other than EA flag is same
+
+*******************************************************************************
+********** ANDI ***************************************************************
+O_ANDI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+           LEA       STR_ANDI,A6     * Load ANDI string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
+
+*******************************************************************************
+********** ADDI ***************************************************************
+O_ADDI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+           LEA       STR_ADDI,A6     * Load ADDI string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
+
+*******************************************************************************
+********** SUBI ***************************************************************
+O_SUBI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+           LEA       STR_SUBI,A6     * Load SUBI string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
+
+*******************************************************************************
+********** EORI ***************************************************************
+O_EORI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+           LEA       STR_EORI,A6     * Load EORI string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** CMPI ***************************************************************
@@ -735,6 +771,10 @@ STR_BLT    DC.B      'BLT',0
 STR_BRA    DC.B      'BRA',0
 STR_BVC    DC.B      'BVC',0
 STR_CMP    DC.B      'CMP',0
+STR_ADDI   DC.B      'ADDI',0
+STR_SUBI   DC.B      'SUBI',0
+STR_EORI   DC.B      'EORI',0
+STR_ANDI   DC.B      'ANDI',0
 STR_CMPI   DC.B      'CMPI',0
 STR_DIVS   DC.B      'DIVS',0
 STR_EOR    DC.B      'EOR',0
