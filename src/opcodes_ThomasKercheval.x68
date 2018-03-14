@@ -7,17 +7,6 @@
 
 CR         EQU       $0D             * Carriage return
 LF         EQU       $0A             * Line feed
-*STACKPTRE  EQU       $8000
-*
-*           ORG       $1000
-*START:                               * first instruction of program
-********************* Start****************************************************
-*TEST_START LEA       STACKPTRE,SP
-*           LEA       TEST_OP,A0
-*           MOVE.B    TEST_FLAG,D0
-*           LEA       TEST_BUFF,A2
-*           JSR       OP_START
-*CONFIRM_T  BRA       END_THOM
 
 *******************************************************************************
 ******************** Opcode Start *********************************************
@@ -246,9 +235,7 @@ BRANCHZ    BTST      #12,D1          * Should be 0
 ********** ORI ****************************************************************
 O_ORI      MOVE.W    #10,EA_FLAG     * Load flag for EA
            LEA       STR_ORI,A6      * Load ORI string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** BCLR ***************************************************************
@@ -262,10 +249,9 @@ O_BCLR     MOVE.W    MASK_6_7,D2     * Load mask for validation
 
            MOVE.W    #9,EA_FLAG      * Load flag for EA
 WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
-           JSR       WRITE_ANY
            MOVE.W    #1,SIZE_OP
-           
-           BRA       PREP_EA
+
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** BCLR version 2 *****************************************************
@@ -281,9 +267,7 @@ O_BCLR_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
 ********** CMPI ***************************************************************
 O_CMPI     MOVE.W    #10,EA_FLAG      * Load flag for EA
            LEA       STR_CMPI,A6     * Load CMPI string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** MOVEA **************************************************************
@@ -300,8 +284,7 @@ O_MOVEA    MOVE.W    #0,EA_FLAG      * Load flag for EA
            CMP.W     #-5,SIZE_OP     * MOVEA must have valid size
            BEQ       INVALID_OP
 
-           JSR       WRITE_ANY
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** MOVE ***************************************************************
@@ -316,16 +299,13 @@ O_MOVE     MOVE.W    #0,EA_FLAG      * Load flag for EA
            CMP.W     #-5,SIZE_OP     * MOVE must have valid size
            BEQ       INVALID_OP
 
-           JSR       WRITE_ANY
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** NEG ****************************************************************
 O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
            LEA       STR_NEG,A6      * Load NEG string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** JSR ****************************************************************
@@ -336,10 +316,9 @@ O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
            BNE       INVALID_OP      * Else, invalid
 
            LEA       STR_JSR,A6      * Load NEG string into A6
-           JSR       WRITE_ANY       * Write op
            MOVE.W    #2,SIZE_OP      * Tell EA to grab a long
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** MOVEM **************************************************************
@@ -360,67 +339,59 @@ O_MOVEM    BTST      #11,D1          * 11th bit must be 1 for MOVEM
            MOVE.W    D1,D6           * Must test bit 6 for size flag test
            LSR.W     #6,D6           * Shift 6th bit into least sig postition
            JSR       SINGLE_SZ       * MOVEM has one size flag, test it
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** LEA ****************************************************************
 O_LEA      MOVE.W    #8,EA_FLAG      * Load flag for EA
            LEA       STR_LEA,A6      * Load LEA string into A6
-           JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** SUBQ ***************************************************************
 O_SUBQ     MOVE.W    #6,EA_FLAG      * Load flag for EA
            LEA       STR_SUBQ,A6     * Load SUBQ string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
            BTST      #8,D1           * SUBQ has 1 in bit 8
            BEQ       INVALID_OP      * If it is 0, then is invalid
 
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** BRA ****************************************************************
 O_BRA      MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       STR_BRA,A6      * Load BRA string into A6
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** BCS ****************************************************************
 O_BCS      MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       STR_BCS,A6      * Load BCS string into A6
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** BVC ****************************************************************
 O_BVC      MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       STR_BVC,A6      * Load BVC string into A6
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** BGE ****************************************************************
 O_BGE      MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       STR_BGE,A6      * Load BGE string into A6
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** BLT ****************************************************************
 O_BLT      MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       STR_BLT,A6      * Load BLT string into A6
-           JSR       WRITE_ANY
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** DIVS ***************************************************************
@@ -433,41 +404,32 @@ O_DIVS     MOVE.W    #2,EA_FLAG      * Load flag for EA
 
            MOVE.W    #1,SIZE_OP      * 1 into size_op to represent word for API
            LEA       STR_WORD,A6
-           JSR       WRITE_ANY       * Write size to buffer
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** OR *****************************************************************
 O_OR       MOVE.W    #3,EA_FLAG      * Load flag for EA
            LEA       STR_OR,A6       * Load OR string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** SUB ****************************************************************
 O_SUB      MOVE.W    #3,EA_FLAG      * Load flag for EA
            LEA       STR_SUB,A6       * Load SUB string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** CMP ****************************************************************
 O_CMP      MOVE.W    #2,EA_FLAG      * Load flag for EA
            LEA       STR_CMP,A6      * Load CMP string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** EOR ****************************************************************
 O_EOR      MOVE.W    #9,EA_FLAG      * Load flag for EA
            LEA       STR_EOR,A6      * Load EOR string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** MULS ***************************************************************
@@ -484,17 +446,14 @@ O_MULS     MOVE.W    MASK_6_8,D2     * Load mask for validation
 
            MOVE.W    #1,SIZE_OP      * 1 into size_op to represent word for API
            LEA       STR_WORD,A6
-           JSR       WRITE_ANY       * Write size to buffer
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** ADD ****************************************************************
 O_ADD      MOVE.W    #3,EA_FLAG      * Load flag for EA
            LEA       STR_ADD,A6      * Load ADD string into A6
-           JSR       NORM_OP_FL      * Write op, '.', get size, write size
-
-           BRA       PREP_EA
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** ADDA ***************************************************************
@@ -509,9 +468,8 @@ O_ADDA     MOVE.W    #8,EA_FLAG      * Load flag for EA
            LSR.W     #8,D6           * Shift 6th bit into least sig postition
 
            JSR       SINGLE_SZ       * Grab single size
-           JSR       WRITE_ANY       * Write size to buffer
 
-           BRA       PREP_EA
+           BRA       WR_PRP_EA
 
 *******************************************************************************
 ********** LSd ****************************************************************
@@ -572,7 +530,7 @@ NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
            BEQ       EXIT_BAD        * Should have valid size, else exit
            JSR       WRITE_ANY       * Write size to buffer
 
-           RTS                       * Return for opcode specific processing
+           BRA       PREP_EA         * Prepare to call EA
 
 EXIT_BAD   ADDA.L    #4,SP           * Hacks to return to I/O module
            MOVE.W    #1,D0           * Tell I/O that something bad happened
@@ -717,17 +675,17 @@ SINGLE_SZ  BTST      #0,D6
            BRA       OP_L_SZ         * Else, 1 is a long
 
 *******************************************************************************
+******************** Common pattern, encapsulate ******************************
+WR_PRP_EA  JSR       WRITE_ANY       * Write NULLTRM str at (A6)
+           BRA       PREP_EA         * Send to EA module
+
+*******************************************************************************
 ******************** Write a null-term string to buff *************************
 WRITE_ANY  CMPI.B    #0,(A6)         * Is the byte at A6 the NULL Char?
            BEQ       W_DONE
            MOVE.B    (A6)+,(A2)+
            BRA       WRITE_ANY
 W_DONE     RTS
-
-*******************************************************************************
-******************** Fin ******************************************************
-END_THOM   MOVE.B    #9,D0           * Break out of sim
-           TRAP      #15
 
 *******************************************************************************
 ******************** API variable storage *************************************
@@ -849,3 +807,4 @@ STR_LONG   DC.B      'L',0
 *~Font size~10~
 *~Tab type~1~
 *~Tab size~4~
+
