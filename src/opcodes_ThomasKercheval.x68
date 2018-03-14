@@ -352,11 +352,16 @@ O_LEA      MOVE.W    #8,EA_FLAG      * Load flag for EA
 *******************************************************************************
 ********** SUBQ ***************************************************************
 O_SUBQ     MOVE.W    #6,EA_FLAG      * Load flag for EA
-           LEA       STR_SUBQ,A6     * Load SUBQ string into A6
            BTST      #8,D1           * SUBQ has 1 in bit 8
-           BEQ       INVALID_OP      * If it is 0, then is invalid
+           BEQ       O_ADDQ          * If it is 0, then is ADDQ
+           LEA       STR_SUBQ,A6     * Load SUBQ string into A6
 
-           BRA       NORM_OP_FL      * Write op, '.', get size, write size
+Q_OPS      BRA       NORM_OP_FL      * Write op, '.', get size, write size
+
+*******************************************************************************
+********** SUBQ ***************************************************************
+O_ADDQ     LEA       STR_ADDQ,A6     * ADDQ and SUBQ are only one bit off :)
+           BRA       Q_OPS           * So, we pushed them into same bin
 
 *******************************************************************************
 ********** BRA ****************************************************************
@@ -746,6 +751,7 @@ STR_NEG    DC.B      'NEG',0
 STR_OR     DC.B      'OR',0
 STR_SUB    DC.B      'SUB',0
 STR_SUBQ   DC.B      'SUBQ',0
+STR_ADDQ   DC.B      'ADDQ',0
 
 STR_PERI   DC.B      '.',0
 STR_SPACE  DC.B      ' ',0
