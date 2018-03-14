@@ -77,6 +77,7 @@ restart         LEA     PromptStartAddr,A1      * load prompt to print, asking u
                 LEA     PromptToPressENTER,A1   * prompt user to press ENTER for next page of data
                 MOVE.B  #14,D0
                 TRAP    #15
+                LEA     BUG_FIX,A1              * Don't overwrite the message, yo
 
 **************************************** printing out disassembled code ********************************************            
 waitForENTER    MOVE.L  #0,D2                   * reset linesOutputted to 0
@@ -291,6 +292,7 @@ NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,
 * prompts to user
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0 
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
+BUG_FIX                 DCB.B   4,0
 PromptToPressENTER      DC.B    'Press ENTER to get the next page of disassembled code.',0
 Welcome                 DC.B    'Welcome to our disassembler!',CR,LF,'Created by Sexy8k: [Natalia Gilbertson][Thomas Kercheval][Saam Amiri]',CR,LF,'Please load your file into memory.',CR,LF,CR,LF,0
 EOF                     DC.B    '~ End of file ~',0
