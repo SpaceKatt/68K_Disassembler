@@ -77,10 +77,10 @@ restart         LEA     PromptStartAddr,A1      * load prompt to print, asking u
                 LEA     PromptToPressENTER,A1   * prompt user to press ENTER for next page of data
                 MOVE.B  #14,D0
                 TRAP    #15
-                LEA     BUG_FIX,A1              * Don't overwrite the message, yo
 
 **************************************** printing out disassembled code ********************************************            
-waitForENTER    MOVE.L  #0,D2                   * reset linesOutputted to 0
+waitForENTER    LEA     OutputBuffer,A1
+                MOVE.L  #0,D2                   * reset linesOutputted to 0
                 MOVE.B  #2,D0                   * trap task for reading input
                 TRAP    #15                     * read input, expecting ENTER from user to proceed disassembling
             
@@ -273,6 +273,7 @@ loopHBF                 CMP.B   #4,D3                     * loop for each hex ch
 endMethodHBF            RTS
                         
 * print a disassembled instructions to the user                        
+******* FIX BUG, POSSIBLY HERE
 OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for printing a string at A1
                         LEA     OutputBuffer,A1           * load output buffer into A1
                         MOVEA.L A2,A5                     * get the current pointer spot in the output buffer
@@ -292,7 +293,6 @@ NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,
 * prompts to user
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0 
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0
-BUG_FIX                 DCB.B   4,0
 PromptToPressENTER      DC.B    'Press ENTER to get the next page of disassembled code.',0
 Welcome                 DC.B    'Welcome to our disassembler!',CR,LF,'Created by Sexy8k: [Natalia Gilbertson][Thomas Kercheval][Saam Amiri]',CR,LF,'Please load your file into memory.',CR,LF,CR,LF,0
 EOF                     DC.B    '~ End of file ~',0
@@ -303,7 +303,7 @@ StoreInputStartAddr     DC.L    0   * each address needs 8 bytes to be read into
 StoreInputStartAddr2    DC.L    0   * so more space is built in
 StoreInputEndAddr       DC.L    0
 StoreInputEndAddr2      DC.L    0
-OutputBuffer            DCB.B   80,0
+OutputBuffer            DCB.B   84,0
 
 *******************************************************************************
 *******************************************************************************
