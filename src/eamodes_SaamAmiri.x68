@@ -167,20 +167,29 @@ reg_set
   JSR     reg_list           * proccess LS Byte registers
 *next byte of register set
   MOVE.B  #0,D0              * init counter
-  CMP.B   #$00,D3            * check if no reg full
-  BEQ     no_slash           * empty D regs no / needed
-   LSR.W   #8,D3              * shift A regs to D regs spot 7-0
-  CMP.W   #$00,D3            * compare MSByte to 0
+  MOVE.W  D3,D6              * save temp 
+  JSR     write_slash        * checks if slash needed
+  
+  LSR.W   #8,D3              * shift A regs to D regs spot 7-0
+  CMP.B   #$00,D3            * check if A regs empty  
   BEQ     return             * next reg_list is empty RTS             
 
-  LEA     str_slash,A6       * load  /
-  JSR     write_str          * write /
-
-no_slash
   ADDA.W  #1,A4              * points at 'A' will write A(D0)
   JSR     reg_list           * calc A reg bitmask
   MOVE.B  #0,D0              * set good flag
   RTS                        * return to caller
+
+write_slash
+  CMP.B   #$00,D6            * check if D reg empty
+  BEQ     return             * empty D regs no / needed
+  LSR.W   #8,D6              * shift A regs to D regs spot 7-0
+  CMP.B   #$00,D6            * check if A regs empty  
+  BEQ     return             * next reg_list is empty RTS
+  LEA     str_slash,A6       * load  /
+  JSR     write_str          * write /
+  RTS
+  
+  
 
 flip_op * Bit tested = 0 -> (<list>,EA)
   * Save copy of D3
@@ -461,6 +470,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 
