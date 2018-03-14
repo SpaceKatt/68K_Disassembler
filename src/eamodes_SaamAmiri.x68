@@ -153,39 +153,37 @@ shift                       * data != 0 -> (1-7)
     
 bin7 * MOVEM (6 bit w/Direction)
   BTST    #10,D3             * check direction bit
-  BEQ     flip               * Bit tested = 0 -> (<list>,EA)  
-  
+  BEQ     flip_op            * Bit tested = 0 -> (<list>,EA)  
   JSR     mode_test          * Bit tested = 1 -> (EA,<list>)
-  JSR     write_comma
+  JSR     write_comma        * write comma
+
+reg_set
   MOVE.B  #0,D0              * init counter
-  LEA     STR_DA,A4          * currently points at D
+  LEA     STR_DA,A4          * points at 'D' will write D(D0)
+  MOVE.W  (A0)+,D3           * grab reg bit masked word
   JSR     reg_list           * proccess LS Byte registers
-  
-  MOVE.B  #0,D0              * init counter
-  ADDA.W  #2,A4              * points at A
+*next byte of register set
   CMP.B   #$00,D3            * check if no reg full
   BEQ     no_slash           * empty D regs no / needed
   LEA     str_slash,A6       * load  /
   JSR     write_str          * write /
-      
+
 no_slash
-  LSR.W   #8,D3
-  JSR     reg_list
-  RTS  
+  MOVE.B  #0,D0              * init counter
+  ADDA.W  #2,A4              * points at 'A' will write A(D0)
+  LSR.W   #8,D3              * shift A regs to D regs spot 7-0
+  JSR     reg_list           * calc A reg bitmask
+  MOVE.B  #0,D0              * set good flag
+  RTS                        * return to caller
 
-
-
-flip
-  MOVE.B #0,D0              * init counter
-  LEA    STR_DA,A4          * currently points at D
-  JSR    reg_list
-  
-  
-  JSR    write_comma
-  JSR    mode_test
-   
-
-  
+flip_op * Bit tested = 0 -> (<list>,EA)
+  * Save copy of D3
+  MOVE.W  D3,D7              * save temp
+  JSR     reg_set            * print reg reg set
+  JSR     write_comma        * print comma
+  MOVE.W  D7,D3              * restore reg
+  JSR     mode_test          * print EA
+  RTS
 
 
 bin8 * 9 bit Address
@@ -334,6 +332,7 @@ reg_sum
   MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff 
   RTS                           * return to caller
 
+************************MOVEM****************************
 reg_list
   BTST      D0,D3
   BNE       full_reg            * bit contains 1
@@ -341,17 +340,34 @@ reg_list
       
 
 full_reg
-  MOVE.B    (A4),(A2)+
-  MOVEA.W    D0,A5              * prepare for index
+  MOVE.B    (A4),(A2)+          * write 'D' or 'A' to buff
+  MOVEA.W   D0,A5               * prepare for index
   MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff
   ADDQ      #1,D0               * increment counter
-  BTST      D0,D3             
+  CMP.B     #8,D0               * check if within bounds
+  BEQ       return              * returns to caller
+  BTST      D0,D3               * test bit    
   BNE       hyphen              * bit = 1 
   BEQ       slash               * bit = 0
     
-hyphen  *complete i-- stuff
-  LEA       STR_hyphen,A6
-  JSR       write_str
+hyphen  
+  LEA       STR_hyphen,A6       * load  -
+  JSR       write_str           * write -
+hyphen_loop
+  ADDQ      #1,D0               * increment count
+  CMP.B     #8,D0               * check bounds
+  BEQ       hyphen_end          * exceed bound
+  BTST      D0,D3               * test bit
+  BNE       hyphen_loop         * loop until no longer contigous 
+  SUBQ      #1,D0               * dec count to valid reg (cur reg is 0)    
+  BRA       full_reg
+      
+hyphen_end * subtract 1, print,RTS
+  SUBQ      #1,D0               * decrement to valid reg
+  MOVE.B    (A4),(A2)+          * write reg to buff
+  MOVEA.W   D0,A5               * prepare for index into sumtable
+  MOVE.B    (SUMTABLE,A5),(A2)+ * store aschii at index to buff
+  RTS                           * return to caller
   
 slash
   ADDQ      #1,D0              * inc counter
@@ -372,7 +388,8 @@ empty_reg
   
 return
   RTS  
-  
+*******************************************************
+
 *Function write string to the buffer
 write_str  
   CMPI.B    #0,(A6)             * is the byte at A6 the NULL Char?
@@ -438,6 +455,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 
