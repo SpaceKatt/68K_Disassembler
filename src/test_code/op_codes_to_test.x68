@@ -474,6 +474,82 @@ BRA_N      DIVS.W    D1,D2
            ORI.L     #92,(A1)+
            ORI.L     #6,-(A1)
 
+           ANDI.B    #10,D2
+           ANDI.B    #26,$88
+           ANDI.B    #88,$FFF88
+           ANDI.B    #53,(A1)
+           ANDI.B    #92,(A1)+
+           ANDI.B    #6,-(A1)
+           ANDI.W    #10,D2
+           ANDI.W    #26,$88
+           ANDI.W    #988,$FFF88
+           ANDI.W    #153,(A1)
+           ANDI.W    #92,(A1)+
+           ANDI.W    #6,-(A1)
+           ANDI.L    #10,D2
+           ANDI.L    #26,$88
+           ANDI.L    #988,$FFF88
+           ANDI.L    #153,(A1)
+           ANDI.L    #92,(A1)+
+           ANDI.L    #6,-(A1)
+
+           SUBI.B    #10,D2
+           SUBI.B    #26,$88
+           SUBI.B    #88,$FFF88
+           SUBI.B    #53,(A1)
+           SUBI.B    #92,(A1)+
+           SUBI.B    #6,-(A1)
+           SUBI.W    #10,D2
+           SUBI.W    #26,$88
+           SUBI.W    #988,$FFF88
+           SUBI.W    #153,(A1)
+           SUBI.W    #92,(A1)+
+           SUBI.W    #6,-(A1)
+           SUBI.L    #10,D2
+           SUBI.L    #26,$88
+           SUBI.L    #988,$FFF88
+           SUBI.L    #153,(A1)
+           SUBI.L    #92,(A1)+
+           SUBI.L    #6,-(A1)
+
+           EORI.B    #10,D2
+           EORI.B    #26,$88
+           EORI.B    #88,$FFF88
+           EORI.B    #53,(A1)
+           EORI.B    #92,(A1)+
+           EORI.B    #6,-(A1)
+           EORI.W    #10,D2
+           EORI.W    #26,$88
+           EORI.W    #988,$FFF88
+           EORI.W    #153,(A1)
+           EORI.W    #92,(A1)+
+           EORI.W    #6,-(A1)
+           EORI.L    #10,D2
+           EORI.L    #26,$88
+           EORI.L    #988,$FFF88
+           EORI.L    #153,(A1)
+           EORI.L    #92,(A1)+
+           EORI.L    #6,-(A1)
+
+           ADDI.B    #10,D2
+           ADDI.B    #26,$88
+           ADDI.B    #88,$FFF88
+           ADDI.B    #53,(A1)
+           ADDI.B    #92,(A1)+
+           ADDI.B    #6,-(A1)
+           ADDI.W    #10,D2
+           ADDI.W    #26,$88
+           ADDI.W    #988,$FFF88
+           ADDI.W    #153,(A1)
+           ADDI.W    #92,(A1)+
+           ADDI.W    #6,-(A1)
+           ADDI.L    #10,D2
+           ADDI.L    #26,$88
+           ADDI.L    #988,$FFF88
+           ADDI.L    #153,(A1)
+           ADDI.L    #92,(A1)+
+           ADDI.L    #6,-(A1)
+
            CMPI.B    #10,D2
            CMPI.B    #26,$88
            CMPI.B    #88,$FFF88

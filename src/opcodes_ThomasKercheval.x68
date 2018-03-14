@@ -253,15 +253,18 @@ O_ORI      MOVE.W    #10,EA_FLAG     * Load flag for EA
 ********** BCLR ***************************************************************
 O_BCLR     MOVE.W    MASK_6_7,D2     * Load mask for validation
            AND.W     D1,D2           * Mask bits 6-7 in opcode
+           MOVE.W    #9,EA_FLAG      * Load flag for EA
+           CMPI.W    #$0000,D2       * If it be %00, then we found BTST
+           BEQ       O_BTST          * Found BTST
+
            CMPI.W    #$0080,D2       * Should be %10, else invalid
            BNE       INVALID_OP      * If invalid, exit
 
            BTST      #8,D1           * Delineate between versions of BCLR
            BEQ       O_BCLR_2        * "Weird" BCLR
 
-           MOVE.W    #9,EA_FLAG      * Load flag for EA
 WR_BCLR    LEA       STR_BCLR,A6     * Load BCLR string into A6
-           MOVE.W    #1,SIZE_OP
+WR_BTST    MOVE.W    #1,SIZE_OP
 
            BRA       WR_PRP_EA
 
@@ -274,6 +277,15 @@ O_BCLR_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
            BNE       INVALID_OP       * Else, are invalid
 
            BRA       WR_BCLR         * Everything other than EA flag is same
+
+O_BTST     LEA       STR_BTST,A6      * Load str for BTST
+           BTST      #8,D1           * Delineate between versions of BTST
+           BEQ       O_BTST_2        * "Weird" BTST
+
+           BRA       WR_BTST
+
+O_BTST_2   MOVE.W    #10,EA_FLAG      * Load flag for EA
+           BRA       WR_BTST
 
 *******************************************************************************
 ********** ANDI ***************************************************************
@@ -573,8 +585,7 @@ NORM_OP_FL JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
 
            BRA       PREP_EA         * Prepare to call EA
 
-EXIT_BAD   ADDA.L    #4,SP           * Hacks to return to I/O module
-           MOVE.W    #1,D0           * Tell I/O that something bad happened
+EXIT_BAD   MOVE.W    #1,D0           * Tell I/O that something bad happened
            RTS
 
 *******************************************************************************
@@ -765,6 +776,7 @@ STR_ORI    DC.B      'ORI',0
 STR_ADD    DC.B      'ADD',0
 STR_ADDA   DC.B      'ADDA',0
 STR_BCLR   DC.B      'BCLR',0
+STR_BTST   DC.B      'BTST',0
 STR_BCS    DC.B      'BCS',0
 STR_BGE    DC.B      'BGE',0
 STR_BLT    DC.B      'BLT',0
