@@ -343,9 +343,9 @@ mode000 * Dn
 
 *Function that sums up the register returns to mode_test
 reg_sum
-  MOVE.W     #$0007,D6          * bitmask keep 3 LSB
-  AND.W      D3,D6              * store D3 bitmasked bits to D6
-  MOVEA.W    D6,A5              * prepare for index
+  MOVE.W     #$0007,D5          * bitmask keep 3 LSB
+  AND.W      D3,D5              * store D3 bitmasked bits to D6
+  MOVEA.W    D5,A5              * prepare for index
   MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff 
   RTS                           * return to caller
 
@@ -422,12 +422,12 @@ write_comma                     * write comma to buffer
   
 read_word                       * proccess word after instruction
   MOVE.W    (A0)+,D1            * read next word
-  MOVE.W    #$000F,D6           * init bit mask
+  MOVE.W    #$000F,D5           * init bit mask
   MOVE.W    #3,D7               * init nibble counter
 word_loop
   ROL.W     #4,D1               * rot MS nibble to LS nibble
   MOVE.W    D1,D2               * save D1
-  AND.W     D6,D2               * bitmask LS nibble
+  AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
   MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
   DBF       D7,word_loop        
@@ -437,12 +437,12 @@ word_loop
 
 read_long                       * proccess long after instruction
   MOVE.L    (A0)+,D1            * read next long            
-  MOVE.W    #$000F,D6           * init bit mask
+  MOVE.W    #$000F,D5           * init bit mask
   MOVE.W    #7,D7               * init nibble counter
 long_loop
   ROL.L     #4,D1               * rot MS nibble to LS nibble
   MOVE.L    D1,D2               * save D1
-  AND.W     D6,D2               * bitmask LS nibble
+  AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
   MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
   DBF       D7,long_loop
