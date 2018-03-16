@@ -277,14 +277,14 @@ BRA_N      DIVS.W    D1,D2
            MOVEM.W   A6,(A7)
            MOVEM.W   D6,(A7)
 
-*           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
-*           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
-*           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
-*           MOVEM.W   A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   A6,-(A7)
-*           MOVEM.W   D6,-(A7)
+           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
+           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
+           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
+           MOVEM.W   A1-A3/A4/A6,-(A7)
+           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
+           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
+           MOVEM.W   A6,-(A7)
+           MOVEM.W   D6,-(A7)
            
            MOVEM.W   D0-D1/D3/D5-D7,$FE
            MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,$FE
@@ -313,14 +313,14 @@ BRA_N      DIVS.W    D1,D2
            MOVEM.L   A6,(A7)
            MOVEM.L   D6,(A7)
 
-*           MOVEM.L   D0-D1/D3/D5-D7,-(A7)
-*           MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
-*           MOVEM.L   D0/D3/D5-D7/A4/A5-A6,-(A7)
-*           MOVEM.L   A1-A3/A4/A6,-(A7)
-*           MOVEM.L   D0/A1-A3/A4/A6,-(A7)
-*           MOVEM.L   D7/A1-A3/A4/A6,-(A7)
-*           MOVEM.L   A6,-(A7)
-*           MOVEM.L   D6,-(A7)
+           MOVEM.L   D0-D1/D3/D5-D7,-(A7)
+           MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
+           MOVEM.L   D0/D3/D5-D7/A4/A5-A6,-(A7)
+           MOVEM.L   A1-A3/A4/A6,-(A7)
+           MOVEM.L   D0/A1-A3/A4/A6,-(A7)
+           MOVEM.L   D7/A1-A3/A4/A6,-(A7)
+           MOVEM.L   A6,-(A7)
+           MOVEM.L   D6,-(A7)
            
            MOVEM.L   D0-D1/D3/D5-D7,$FE
            MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,$FE
@@ -419,6 +419,45 @@ BRA_N      DIVS.W    D1,D2
            LEA       $EF,A6
            LEA       $FFFF,A7
 
+           ADDA.W     D1,A1
+           ADDA.W     $88,A2
+           ADDA.W     $FFF88,A2
+           ADDA.W     (A1),A7
+           ADDA.W     (A1)+,A2
+           ADDA.W     -(A1),A5
+           ADDA.L     D1,A1
+           ADDA.L     $88,A2
+           ADDA.L     $FFF88,A2
+           ADDA.L     (A1),A7
+           ADDA.L     (A1)+,A2
+           ADDA.L     -(A1),A5
+         
+           CMPA.W     D1,A1
+           CMPA.W     $88,A2
+           CMPA.W     $FFF88,A2
+           CMPA.W     (A1),A7
+           CMPA.W     (A1)+,A2
+           CMPA.W     -(A1),A5
+           CMPA.L     D1,A1
+           CMPA.L     $88,A2
+           CMPA.L     $FFF88,A2
+           CMPA.L     (A1),A7
+           CMPA.L     (A1)+,A2
+           CMPA.L     -(A1),A5
+         
+           SUBA.W     D1,A1
+           SUBA.W     $88,A2
+           SUBA.W     $FFF88,A2
+           SUBA.W     (A1),A7
+           SUBA.W     (A1)+,A2
+           SUBA.W     -(A1),A5
+           SUBA.L     D1,A1
+           SUBA.L     $88,A2
+           SUBA.L     $FFF88,A2
+           SUBA.L     (A1),A7
+           SUBA.L     (A1)+,A2
+           SUBA.L     -(A1),A5
+         
            ********* BIN 9 ***************
            BCLR      D1,D4
            BCLR      D3,(A4)
