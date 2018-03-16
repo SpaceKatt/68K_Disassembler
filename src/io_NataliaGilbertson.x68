@@ -12,7 +12,7 @@ Stack           EQU       $8000 * where the stack pointer begins
 PageOfOutput    EQU       20    * how many lines of disassembled code is printing
                                 * when the user presses ENTER
 
-           ORG       $1000
+           ORG       $90000
 START:                          * first instruction of program
 ******************** Start*****************************************************
                 LEA     Stack,SP                * load stack pointer value (A7 is stack pointer)
@@ -216,7 +216,7 @@ loopACATB               CMP.B   #8,D3                     * while not all 8 char
                         MOVE.B  D4,D5                     * move the first byte of D4 into D5
                         AND     #%00001111,D5             * bit mask the second nibble out of the byte
                         MOVEA   D5,A5                     * move the nibble in question into A5
-                        MOVE.B  (NumbersToASCII,A5),(A2)+ * displace the nibble value into the string hashtable and put
+                        MOVE.B  (NumbersToASCII,PC,A5),(A2)+ * displace the nibble value into the string hashtable and put
                         BRA     loopACATB                 * the hash result into the output buffer
                                                           * do this for all characters in the address
 
@@ -240,6 +240,9 @@ HandleBadFlag           LEA     OutputBuffer,A2           * reset the output buf
                         MOVE.B  #$41,(A2)+
                         MOVE.B  #$54,(A2)+
                         MOVE.B  #$41,(A2)+
+
+* string hashtable
+NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
 
                         * put space formatting into the output buffer
                         MOVE.B  #$20,(A2)+
@@ -267,7 +270,7 @@ loopHBF                 CMP.B   #4,D3                     * loop for each hex ch
                         MOVE.B  D1,D4                     * pass the nibble to D4
                         AND     #%00001111,D4             * bit mask the second nibble in the first byte that was grabbed
                         MOVEA   D4,A5                     * move the single hex char into A5
-                        MOVE.B  (NumbersToASCII,A5),(A2)+ * displace the hex value into the string hashtable and load the result
+                        MOVE.B  (NumbersToASCII,PC,A5),(A2)+ * displace the hex value into the string hashtable and load the result
                         BRA     loopHBF                   * into the output buffer
 
 endMethodHBF            RTS
@@ -287,8 +290,6 @@ OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for p
 
 *******************************************************************************
 ******************** variables and constants **********************************
-* string hashtable
-NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
 * prompts to user
 PromptStartAddr         DC.B    'Enter starting address of file, then press ENTER: ',0
 PromptEndAdder          DC.B    'Enter ending address of file, then press ENTER: ',0

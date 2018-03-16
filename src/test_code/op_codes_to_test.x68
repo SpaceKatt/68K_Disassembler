@@ -11,6 +11,19 @@ LF         EQU       $0A            * Line feed
            ORG       $10000
 START:                              * first instruction of program
 ******************** Start*****************************************************
+           MOVEA.L  $8000,SP
+           CLR.L    D0
+           PEA      (COLD_CUT,PC)
+           MOVEA.L  (SP)+,A0
+           MOVE.L   #16,D0
+
+           ********* INVALID ADDRESSING MODES
+COLD_CUT   MOVE.W   (COLD_CUT,A0),D4
+           MOVE.W   (COLD_CUT,A0,D0),D4
+           MOVE.W   (COLD_CUT,A0,A0),D4
+           MOVE.W   (COLD_CUT,PC),D4
+           MOVE.W   (COLD_CUT,PC,D0),D4
+           MOVE.W   (COLD_CUT,PC,A0),D4
            ********* BIN 0 ***************
            TRAP      #15
            MOVE.B    D0,D3
@@ -108,6 +121,23 @@ BRA_2      BCS       BRA_3
 BRA_3      BGE       BRA_4
 BRA_4      BLT       BRA_5
 BRA_5      BRA       BRA_N
+
+
+           BRA       BRA_2
+           BHI       BRA_2
+           BLS       BRA_2
+           BCC       BRA_3
+           BCS       BRA_4
+           BNE       BRA_5
+           BEQ       BRA_N
+           BVC       BRA_3
+           BVS       BRA_4
+           BPL       BRA_5
+           BMI       BRA_N
+           BGE       BRA_3
+           BLT       BRA_4
+           BGT       BRA_5
+           BLE       BRA_N
 
            ********* BINLESSSSSS *********
 BINZZ      NOP

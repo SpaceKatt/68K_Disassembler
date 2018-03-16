@@ -261,12 +261,33 @@ BRANCHZ    BTST      #12,D1          * Should be 0
                                      * use as a displacement
 
            MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       (BRA_TABLE,A6),A6      * Load BRA string into A6
+           LEA       (BRA_TABLE,PC,A6),A6      * Load BRA string into A6
            MOVEA.L   (A6),A6
 
            CMP.B     #0,(A6)         * Invalid opcode! BF doesn't exist
                                      * It's string is set to NULL
            BRA       WR_PRP_EA
+
+BRA_TABLE  DC.L      STR_BRA,STR_BF,STR_BHI,STR_BLS,STR_BCC,STR_BCS,STR_BNE
+           DC.L      STR_BEQ,STR_BVC,STR_BVS,STR_BPL,STR_BMI,STR_BGE,STR_BLT
+           DC.L      STR_BGT,STR_BLE
+
+STR_BRA    DC.B      'BRA',0
+STR_BF     DC.B      0
+STR_BHI    DC.B      'BHI',0
+STR_BLS    DC.B      'BLS',0
+STR_BCC    DC.B      'BCC',0
+STR_BCS    DC.B      'BCS',0
+STR_BNE    DC.B      'BNE',0
+STR_BEQ    DC.B      'BEQ',0
+STR_BVC    DC.B      'BVC',0
+STR_BVS    DC.B      'BVS',0
+STR_BPL    DC.B      'BPL',0
+STR_BMI    DC.B      'BMI',0
+STR_BGE    DC.B      'BGE',0
+STR_BLT    DC.B      'BLT',0
+STR_BGT    DC.B      'BGT',0
+STR_BLE    DC.B      'BLE',0
 
 *******************************************************************************
 ********** END Decision tree***************************************************
@@ -794,27 +815,6 @@ STR_SPACE  DC.B      ' ',0
 STR_BYTE   DC.B      'B',0
 STR_WORD   DC.B      'W',0
 STR_LONG   DC.B      'L',0
-
-BRA_TABLE  DC.L      STR_BRA,STR_BF,STR_BHI,STR_BLS,STR_BCC,STR_BCS,STR_BNE
-           DC.L      STR_BEQ,STR_BVC,STR_BVS,STR_BPL,STR_BMI,STR_BGE,STR_BLT
-           DC.L      STR_BGT,STR_BLE
-
-STR_BRA    DC.B      'BRA',0
-STR_BF     DC.B      0
-STR_BHI    DC.B      'BHI',0
-STR_BLS    DC.B      'BLS',0
-STR_BCC    DC.B      'BCC',0
-STR_BCS    DC.B      'BCS',0
-STR_BNE    DC.B      'BNE',0
-STR_BEQ    DC.B      'BEQ',0
-STR_BVC    DC.B      'BVC',0
-STR_BVS    DC.B      'BVS',0
-STR_BPL    DC.B      'BPL',0
-STR_BMI    DC.B      'BMI',0
-STR_BGE    DC.B      'BGE',0
-STR_BLT    DC.B      'BLT',0
-STR_BGT    DC.B      'BGT',0
-STR_BLE    DC.B      'BLE',0
 
            NOP  *** THIS IS NEEDED, ELSE EA MODULE CAN ORG AT NONWORD ALIGNED
            INCLUDE   "eamodes_SaamAmiri.x68"
