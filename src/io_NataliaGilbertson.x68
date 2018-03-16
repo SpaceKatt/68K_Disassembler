@@ -226,6 +226,8 @@ endMethodACATB          MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
                         MOVE.B  #$20,(A2)+
                         RTS
+* string hashtable
+NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
 
 * handles problems encountered by opcodes and effective addressing for the output buffer
 * the bad flag is stored at D0
@@ -240,9 +242,6 @@ HandleBadFlag           LEA     OutputBuffer,A2           * reset the output buf
                         MOVE.B  #$41,(A2)+
                         MOVE.B  #$54,(A2)+
                         MOVE.B  #$41,(A2)+
-
-* string hashtable
-NumbersToASCII          DC.B    $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46
 
                         * put space formatting into the output buffer
                         MOVE.B  #$20,(A2)+
@@ -311,6 +310,7 @@ OutputBuffer            DCB.B   84,0
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
+
 *~Font name~Courier~
 *~Font size~10~
 *~Tab type~1~

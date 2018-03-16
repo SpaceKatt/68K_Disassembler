@@ -424,7 +424,7 @@ reg_sum
   MOVE.W     #$0007,D5          * bitmask keep 3 LSB
   AND.W      D3,D5              * store D3 bitmasked bits to D6
   MOVEA.W    D5,A5              * prepare for index
-  MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff 
+  MOVE.B    (SUMTABLE,PC,A5),(A2)+ * store ascii at index to goodbuff 
   RTS                           * return to caller
 
 ************************MOVEM****************************
@@ -437,7 +437,7 @@ reg_list
 full_reg
   MOVE.B    (A4),(A2)+          * write 'D' or 'A' to buff
   MOVEA.W   D0,A5               * prepare for index
-  MOVE.B    (SUMTABLE,A5),(A2)+ * store ascii at index to goodbuff
+  MOVE.B    (SUMTABLE,PC,A5),(A2)+ * store ascii at index to goodbuff
   ADDQ      #1,D0               * increment counter
   CMP.B     #8,D0               * check if within bounds
   BEQ       return              * returns to caller
@@ -461,7 +461,7 @@ hyphen_end * subtract 1, print,RTS
   SUBQ      #1,D0               * decrement to valid reg
   MOVE.B    (A4),(A2)+          * write reg to buff
   MOVEA.W   D0,A5               * prepare for index into sumtable
-  MOVE.B    (SUMTABLE,A5),(A2)+ * store aschii at index to buff
+  MOVE.B    (SUMTABLE,PC,A5),(A2)+ * store aschii at index to buff
   RTS                           * return to caller
   
 slash
@@ -472,8 +472,11 @@ slash
   BEQ       slash              * bit = 0 loop
   LEA       STR_SLASH,A6       * bit = 1 write slash
   JSR       write_str
-  BRA       full_reg           *             
-
+  BRA       full_reg           *  
+           
+SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
+           DC.B      '9','A','B','C','D','E','F'
+           
 empty_reg 
   ADDQ      #1,D0               * incrmeent counter
   CMP.B     #8,D0               * check out of range
@@ -507,7 +510,7 @@ word_loop
   MOVE.W    D1,D2               * save D1
   AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
-  MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
+  MOVE.B    (SUMTABLE,PC,A6),(A2)+ * store ascii at index to goodbuff
   DBF       D7,word_loop        
   RTS
 
@@ -522,15 +525,13 @@ long_loop
   MOVE.L    D1,D2               * save D1
   AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
-  MOVE.B    (SUMTABLE,A6),(A2)+ * store ascii at index to goodbuff
+  MOVE.B    (SUMTABLE,PC,A6),(A2)+ * store ascii at index to goodbuff
   DBF       D7,long_loop
   RTS
 
 *END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
-SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
-           DC.B      '9','A','B','C','D','E','F'
 
 STR_IMM    DC.B      '#',0
 STR_$      DC.B      '$',0
@@ -547,6 +548,8 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
+
 
 
 
