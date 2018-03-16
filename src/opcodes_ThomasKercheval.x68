@@ -134,7 +134,7 @@ O_Z_ZERO   BTST      #12,D1          * Test fourth MSB
  ******************************************************************************
 ROTATEZ    BTST      #12,D1          * All of these opcodes should have 0 here
            BNE       INVALID_OP      * Else, are invalid
-           
+
            BTST      #8,D1           * Determines direction
            BEQ       GO_RIGHT
            MOVE.W    #1,D7           * Lets say 0 is R and 1 is left
@@ -149,13 +149,13 @@ CONT_ROTZ  MOVE.W    MASK_6_7,D2     * Load mask for bits 6-7
            MOVE.W    #5,EA_FLAG      * "weird" rotation
            MOVE.W    #$0018,D2       * Load mask for bits 3-4
            AND.W     D1,D2           * Mask bits 3-4
-           LSR       #3,D2
+           LSR       #3,D2           * Shift into LSB for test
            BRA       COMP_ROTZ
 
 NORM_ROTZ  MOVE.W    #1,EA_FLAG      * Normal 6-EA
            MOVE.W    #$0600,D2       * Load mask for bits 9-10
            AND.W     D1,D2           * Mask bits 9-10
-           LSR       #8,D2
+           LSR       #8,D2           * Shift into LSB for test
            LSR       #1,D2
 
 COMP_ROTZ  CMPI.W    #$0000,D2       * ASd signature
@@ -220,32 +220,19 @@ BRANCHZ    BTST      #12,D1          * Should be 0
            CLR.L     D2
            MOVE.W    MASK_8_11,D2    * Load mask for bits 8-11
            AND.L     D1,D2           * MASK bits
-           LSR.L     #8,D2
-           MULS      #4,D2
-           MOVEA.W   D2,A6
+
+           LSR.L     #8,D2           * Make bits into 0-F index
+           MULS      #4,D2           * Multiply by 4, because each address in
+           MOVEA.W   D2,A6           * BRA_TABLE is a LONG. Move to A6 for
+                                     * use as a displacement
 
            MOVE.W    #4,EA_FLAG      * Load flag for EA
            LEA       (BRA_TABLE,A6),A6      * Load BRA string into A6
            MOVEA.L   (A6),A6
-           **CHECK FOR NULL, BF does't make sense
 
+           CMP.B     #0,(A6)         * Invalid opcode! BF doesn't exist
+                                     * It's string is set to NULL
            BRA       WR_PRP_EA
-*           CMPI.W    #$0000,D2       * Will be zero if 8-11 are 0000
-*           BEQ       O_BRA
-*
-*           CMPI.W    #$0500,D2       * Will set zero if 8-11 are 0101
-*           BEQ       O_BCS
-*
-*           CMPI.W    #$0800,D2       * Will set zero if 8-11 are 1000
-*           BEQ       O_BVC
-*
-*           CMPI.W    #$0C00,D2       * Will set zero if 8-11 are 1100
-*           BEQ       O_BGE
-*
-*           CMPI.W    #$0D00,D2       * Will set zero if 8-11 are 1101
-*           BEQ       O_BLT
-*
-*           BRA       INVALID_OP      * Invalid opcode!
 
 *******************************************************************************
 ********** END Decision tree***************************************************
@@ -312,19 +299,19 @@ O_ADDI     MOVE.W    #10,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** SUBI ***************************************************************
-O_SUBI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+O_SUBI     MOVE.W    #10,EA_FLAG     * Load flag for EA
            LEA       STR_SUBI,A6     * Load SUBI string into A6
            BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** EORI ***************************************************************
-O_EORI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+O_EORI     MOVE.W    #10,EA_FLAG     * Load flag for EA
            LEA       STR_EORI,A6     * Load EORI string into A6
            BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** CMPI ***************************************************************
-O_CMPI     MOVE.W    #10,EA_FLAG      * Load flag for EA
+O_CMPI     MOVE.W    #10,EA_FLAG     * Load flag for EA
            LEA       STR_CMPI,A6     * Load CMPI string into A6
            BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
@@ -374,7 +361,7 @@ O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
            CMPI.W    #$0080,D2       * Should be %10
            BNE       INVALID_OP      * Else, invalid
 
-           LEA       STR_JSR,A6      * Load NEG string into A6
+           LEA       STR_JSR,A6      * Load JSR string into A6
            MOVE.W    #2,SIZE_OP      * Tell EA to grab a long
 
            BRA       WR_PRP_EA
@@ -423,46 +410,11 @@ O_ADDQ     LEA       STR_ADDQ,A6     * ADDQ and SUBQ are only one bit off :)
            BRA       Q_OPS           * So, we pushed them into same bin
 
 *******************************************************************************
-********** BRA ****************************************************************
-O_BRA      MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       STR_BRA,A6      * Load BRA string into A6
-
-           BRA       WR_PRP_EA
-
-*******************************************************************************
-********** BCS ****************************************************************
-O_BCS      MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       STR_BCS,A6      * Load BCS string into A6
-
-           BRA       WR_PRP_EA
-
-*******************************************************************************
-********** BVC ****************************************************************
-O_BVC      MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       STR_BVC,A6      * Load BVC string into A6
-
-           BRA       WR_PRP_EA
-
-*******************************************************************************
-********** BGE ****************************************************************
-O_BGE      MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       STR_BGE,A6      * Load BGE string into A6
-
-           BRA       WR_PRP_EA
-
-*******************************************************************************
-********** BLT ****************************************************************
-O_BLT      MOVE.W    #4,EA_FLAG      * Load flag for EA
-           LEA       STR_BLT,A6      * Load BLT string into A6
-
-           BRA       WR_PRP_EA
-
-*******************************************************************************
 ********** DIVS ***************************************************************
 O_DIVS     MOVE.W    #2,EA_FLAG      * Load flag for EA
            LEA       STR_DIVS,A6     * Load DIVS string into A6
            JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
-* TODO validation
+
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY       * Write '.' to buffer
 
@@ -501,7 +453,7 @@ O_MULS     MOVE.W    MASK_6_8,D2     * Load mask for validation
            AND.W     D1,D2           * Mask to check bits 6-8
            CMPI.W    #$01C0,D2       * They should be %111
            BNE       INVALID_OP      * Else, invalid op
-           
+
            MOVE.W    #2,EA_FLAG      * Load flag for EA
            LEA       STR_MULS,A6     * Load MULS string into A6
            JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
@@ -580,7 +532,6 @@ WEIRD_ROT  MOVE.B    STR_SPACE,-(A2) * Erase '.' from buffer
 ********** End opcode specific processing *************************************
 *******************************************************************************
 *******************************************************************************
-*******************************************************************************
 
 *******************************************************************************
 ******************** The flow of a normal operator ****************************
@@ -601,7 +552,7 @@ EXIT_BAD   MOVE.W    #1,D0           * Tell I/O that something bad happened
 
 *******************************************************************************
 ******************** Prepare for Call to Saam *********************************
-PREP_EA    JSR       SPACE_FILL    
+PREP_EA    JSR       SPACE_FILL
          * CLEAR ALL DATA REGISTERS
            CLR.L     D0
            CLR.L     D1
@@ -625,12 +576,11 @@ PREP_EA    JSR       SPACE_FILL
            MOVE.W    #0,D0
 
            JSR       START_EA
-           JSR       EA_VALID
            BRA       PREP_RET
 
 *******************************************************************************
 ******************** Prepare for return to IO *********************************
-PREP_RET   NOP 
+PREP_RET   NOP
          * CLEAR ALL DATA REGISTERS
            CLR.L     D1
            CLR.L     D2
@@ -653,39 +603,11 @@ INVALID_OP MOVE.L    #1,D0           * Load flag for invalid input
            RTS
 
 *******************************************************************************
-******************** EA buffer address return validation **********************
-EA_VALID   MOVE.L    A0,D7
-           BTST      #0,D7
-           BEQ       EA_IS_VAL
-           LEA       INVAL_MSG,A1
-           BRA       ERR_MSG
-
-EA_IS_VAL  RTS
-
-*******************************************************************************
-******************** Validate size, if invalid size is found, then op is too **
-SZ_VALID   CMPI.W    #-5,D4
-           BNE       EA_IS_VAL
-           LEA       INVAL_SZG,A1
-           BRA       ERR_MSG
-
-SZ_IS_VAL  RTS
-
-*******************************************************************************
-******************** Write an error message ***********************************
-ERR_MSG    MOVE.B    #14,D0          * Write message
-           TRAP      #15
-           MOVE.B    #9,D0           * Break out of sim
-           TRAP      #15
-
-*******************************************************************************
 ******************** Fill with whitespace *************************************
 SPACE_FILL LEA       STR_SPACE,A6    * Load whitespace into A6
            MOVE.L    START_BUFF,D0   * Load starting address of buffer into D0
            SUB.L     A2,D0           * Loads difference into D0
-           *NEG.L     D0
            ADD.W     #$A,D0
-           *MOVE      #0,CCR
 SPACE_LOOP MOVE.B    (A6),(A2)+
            DBEQ      D0,SPACE_LOOP   * Compare is D0 > 0?
 SPACE_DONE RTS
@@ -774,10 +696,6 @@ MASK_6_7   DC.W      $00C0           * Mask for the bits from X to Y for _X_Y
 
 
 ******************** Opcode strings *******************************************
-INVAL_FLG  DC.B      '!!!!',0
-INVAL_MSG  DC.B      'Returned buffer must be on word boundary, looking at you Saam!',CR,LF,0
-INVAL_SZG  DC.B      'Found an invalid size!',CR,LF,0
-
 STR_NOP    DC.B      'NOP',0
 STR_RTS    DC.B      'RTS',0
 STR_MOVE   DC.B      'MOVE',0
@@ -821,11 +739,6 @@ BRA_TABLE  DC.L      STR_BRA,STR_BF,STR_BHI,STR_BLS,STR_BCC,STR_BCS,STR_BNE
            DC.L      STR_BEQ,STR_BVC,STR_BVS,STR_BPL,STR_BMI,STR_BGE,STR_BLT
            DC.L      STR_BGT,STR_BLE
 
-*STR_BCS    DC.B      'BCS',0
-*STR_BGE    DC.B      'BGE',0
-*STR_BLT    DC.B      'BLT',0
-*STR_BRA    DC.B      'BRA',0
-*STR_BVC    DC.B      'BVC',0
 STR_BRA    DC.B      'BRA',0
 STR_BF     DC.B      0
 STR_BHI    DC.B      'BHI',0
@@ -842,50 +755,6 @@ STR_BGE    DC.B      'BGE',0
 STR_BLT    DC.B      'BLT',0
 STR_BGT    DC.B      'BGT',0
 STR_BLE    DC.B      'BLE',0
-******************** Test variables *******************************************
-*TEST_A0    DC.L      TEST_OP
-*TEST_OP    DC.W      $4E71       * NOP
-*TEST_OP    DC.W      $4E75        * RTS
-*TEST_OP    DC.W      $8200        * OR D0,D0
-*TEST_OP    DC.W      $3200        * MOVE.W D0,D1
-*TEST_OP    DC.W      $3240        * MOVEA.W D0,A1
-*TEST_OP    DC.W      $0880        * BCLR  #15,D0
-*TEST_OP    DC.W      $0380        * BCLR  D1,D0
-*TEST_OP    DC.W      $0043        * ORI.W #5,D3
-*TEST_OP    DC.W      $4403        * NEG.B D3
-*TEST_OP    DC.W      $C7C1        * MULS.W D1,D3
-*TEST_OP    DC.W      $D485        * ADD.L  D5,D2
-*TEST_OP    DC.W      $6000        * BRA    <LABEL>
-*TEST_OP    DC.W      $6500        * BCS    <LABEL>
-*TEST_OP    DC.W      $6800        * BVC    <LABEL>
-*TEST_OP    DC.W      $6C00        * BGE    <LABEL>
-*TEST_OP    DC.W      $6D00        * BLT    <LABEL>
-*TEST_OP    DC.W      $5B04        * SUBQ.B   $5,D4
-*TEST_OP    DC.W      $48E7        * MOVEM.L D1-D7/A1/A3-A6,-(SP)
-*TEST_OP    DC.W      $49F8        * LEA $1012,A4
-*TEST_OP    DC.W      $0884        * BCLR   #4,D4
-*TEST_OP    DC.W      $E84E        * LSR      #4,D6
-*TEST_OP    DC.W      $EB49        * LSL.W    #5,D1
-*TEST_OP    DC.W      $E3F8        * LSL.W    $1012
-*TEST_OP    DC.W      $E2F8        * LSL      $1012
-*TEST_OP    DC.W      $E846        * ASR.W    #4,D6
-*TEST_OP    DC.W      $EB41        * ASL.W    #5,D1
-*TEST_OP    DC.W      $E0F8        * ASL      $1012
-*TEST_OP    DC.W      $E1F8        * ASL      $1012
-*TEST_OP    DC.W      $E85E        * ROR.W    #4,D6
-*TEST_OP    DC.W      $EB59        * ROL.W    #5,D1
-*TEST_OP    DC.W      $E6F8        * ROL      $1012
-*TEST_OP    DC.W      $E7F8        * ROL      $1012
-*TEST_OP    DC.W      $4EB9        * JSR      <LABEL>
-*TEST_OP    DC.W      $85C1        * DIVS.W   D1,D2
-*TEST_OP    DC.W      $8240        * OR.W     D0,D1
-*TEST_OP    DC.W      $928B        * SUB.L    A3,D1
-*TEST_OP    DC.W      $B507        * EOR.B    #2,D7
-*TEST_OP    DC.W      $D8C2        * ADDA.W   D4,A4
-*TEST_OP    DC.W      $43F9        * LEA     <label>,A1
-*
-*TEST_FLAG  DC.W      $0
-*TEST_BUFF  DC.B      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
            NOP  *** THIS IS NEEDED, ELSE EA MODULE CAN ORG AT NONWORD ALIGNED
            INCLUDE   "eamodes_SaamAmiri.x68"
