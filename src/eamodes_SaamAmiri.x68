@@ -129,7 +129,23 @@ bin4 * 8 bit branch displacment
   JSR     word_loop         * write hex word from left->right
   RTS 
 bin5 * Special rotation (12 bit)
-
+  MOVE.W  D3,D7             * save temp
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  BTST    #5,D7             * check direction bit
+  BEQ     imm_rot           * immediate used
+  BNE     reg_rot           * data reg used
+imm_rot
+  JSR     reg_sum           * sum reg bits
+  BRA     skip_rot          * skip to end
+reg_rot
+  JSR     mode000           * sum reg bits
+  
+skip_rot
+  JSR     write_comma       * write comma
+  MOVE.W  D7,D3             * restore
+  JSR     mode000           * data reg write
+  
 bin6 * SUBQ (special case)
   MOVE.W  D3,D7             * save temp
   LEA     STR_IMM,A6        * load  #
@@ -211,8 +227,6 @@ write_slash
   JSR     write_str          * write /
   RTS
   
-  
-
 flip_op * Bit tested = 0 -> (<list>,EA)
   * Save copy of D3
   MOVE.W  D3,D7              * save temp
@@ -221,7 +235,6 @@ flip_op * Bit tested = 0 -> (<list>,EA)
   MOVE.W  D7,D3              * restore reg
   JSR     mode_test          * print EA
   RTS
-
 
 bin8 * 9 bit Address
   JSR     mode_test         * test mode/reg
