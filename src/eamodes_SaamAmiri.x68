@@ -155,6 +155,7 @@ shift                       * data != 0 -> (1-7)
   RTS 
     
 bin7 * MOVEM (6 bit w/Direction)
+  MOVE.W  (A0)+,D6           * grab reg bit masked word
   BTST    #10,D3             * check direction bit
   BEQ     flip_op            * Bit tested = 0 -> (<list>,EA)  
   JSR     mode_test          * Bit tested = 1 -> (EA,<list>)
@@ -163,7 +164,8 @@ bin7 * MOVEM (6 bit w/Direction)
 reg_set
   MOVE.B  #0,D0              * init counter
   LEA     STR_DA,A4          * points at 'D' will write D(D0)
-  MOVE.W  (A0)+,D3           * grab reg bit masked word
+  MOVE.W  D6,D3              * place bitmasked word
+  *MOVE.W  (A0)+,D3           * grab reg bit masked word
   JSR     reg_list           * proccess LS Byte registers
 *next byte of register set
   MOVE.B  #0,D0              * init counter
@@ -470,6 +472,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 
