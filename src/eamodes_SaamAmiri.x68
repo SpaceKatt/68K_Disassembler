@@ -156,6 +156,26 @@ shift                       * data != 0 -> (1-7)
     
 bin7 * MOVEM (6 bit w/Direction)
   MOVE.W  (A0)+,D6           * grab reg bit masked word
+  MOVE.W  D3,D1              * store temp 
+  ANDI.W  #$0038,D1          * bit mask mode bits
+  CMPI.W  #$0020,D1          * compare with -(An) mode bits
+  BEQ     pre_dec            * flip bit mask if mode -(An)
+  BNE     skip_pre_dec       * else, skip over pre_dec
+ 
+pre_dec
+  CLR.L   D5                 * CLR temp       
+  MOVE.W  #15,D7             * init counter
+dec_loop 
+  BTST    D7,D6              * test for 1 to add to temp
+  BEQ     load_reg           * skip if 0
+  ADDQ    #1,D5              * add 1 to reg 
+  
+load_reg
+  ROR.W   #1,D5              * build towards correct formating
+  DBF     D7,dec_loop        * dec if not complete
+  MOVE.W  D5,D6              * overwrite post inc for pre dec bit mask
+ 
+skip_pre_dec
   BTST    #10,D3             * check direction bit
   BEQ     flip_op            * Bit tested = 0 -> (<list>,EA)  
   JSR     mode_test          * Bit tested = 1 -> (EA,<list>)
