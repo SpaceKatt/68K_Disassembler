@@ -18,9 +18,9 @@ START:                              * first instruction of program
            MOVE.L   #16,D0
 
            ********* INVALID ADDRESSING MODES
-COLD_CUT   MOVE.W   (COLD_CUT,A0),D4
-           MOVE.W   (COLD_CUT,A0,D0),D4
-           MOVE.W   (COLD_CUT,A0,A0),D4
+COLD_CUT   MOVE.W   (6,A0),D4
+           MOVE.W   (6,A0,D0),D4
+           MOVE.W   (6,A0,A0),D4
            MOVE.W   (COLD_CUT,PC),D4
            MOVE.W   (COLD_CUT,PC,D0),D4
            MOVE.W   (COLD_CUT,PC,A0),D4
