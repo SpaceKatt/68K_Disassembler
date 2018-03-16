@@ -127,19 +127,28 @@ bin4 * 8 bit branch displacment
   MOVE.W  #$000F,D6         * nibble bit mask const  
   MOVE.W  #3,D7             * nibble counter  
   JSR     word_loop         * write hex word from left->right
-  RTS 
+  RTS
+ 
 bin5 * Special rotation (12 bit)
-  MOVE.W  D3,D7             * save temp
-  LSR.W   #$8,D3            * shift dest reg to source reg index
-  LSR.W   #$1,D3            * max of 8 bit shifts per OP
-  BTST    #5,D7             * check direction bit
+  MOVE.W  D3,D6             * save temp
+  AND.W   #$FFC7,D3         * bit mask make EA reg DN
+  *LSR.W   #$8,D3            * shift dest reg to source reg index
+  *LSR.W   #$1,D3            * max of 8 bit shifts per OP
+  BTST    #5,D6             * check direction bit
   BEQ     imm_rot           * immediate used
   BNE     reg_rot           * data reg used
 imm_rot
-  JSR     reg_sum           * sum reg bits
-  BRA     skip_rot          * skip to end
+  JSR     bin6
+  RTS
 reg_rot
+  *MOVE.W  D3,D6             * save temp
+  LSR.W   #$8,D3            * shift dest reg to source reg index
+  LSR.W   #$1,D3            * max of 8 bit shifts per OP
   JSR     mode000           * sum reg bits
+  MOVE.W  D6,D3
+  JSR     mode000
+  RTS
+  
   
 skip_rot
   JSR     write_comma       * write comma
@@ -505,6 +514,8 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
+
 
 
 
