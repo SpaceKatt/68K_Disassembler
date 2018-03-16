@@ -60,6 +60,48 @@ START:                              * first instruction of program
            NEG       (A7)+
            JSR       BINZZ
 
+           LSR.W     (A5)
+           LSR.W     -(A7)
+           LSR.W     (A0)+
+           LSR.W     $4567
+           LSR.W     $9567
+           LSR.W     $F9567
+
+           LSL.W     (A5)
+           LSL.W     -(A7)
+           LSL.W     (A0)+
+           LSL.W     $4567
+           LSL.W     $9567
+           LSL.W     $F9567
+
+           ASR.W     (A5)
+           ASR.W     -(A7)
+           ASR.W     (A0)+
+           ASR.W     $4567
+           ASR.W     $9567
+           ASR.W     $F9567
+
+           ASL.W     (A5)
+           ASL.W     -(A7)
+           ASL.W     (A0)+
+           ASL.W     $4567
+           ASL.W     $9567
+           ASL.W     $F9567
+
+           ROR.W     (A5)
+           ROR.W     -(A7)
+           ROR.W     (A0)+
+           ROR.W     $4567
+           ROR.W     $9567
+           ROR.W     $F9567
+
+           ROL.W     (A5)
+           ROL.W     -(A7)
+           ROL.W     (A0)+
+           ROL.W     $4567
+           ROL.W     $9567
+           ROL.W     $F9567
+
            ********* BIN 4 ***************
 BRA_1      BVC       BRA_2
 BRA_2      BCS       BRA_3
@@ -224,9 +266,59 @@ BRA_N      DIVS.W    D1,D2
 
            ********* BIN 5 ***************
            ** TODO
-*           LSR.W     D7,D3
-*           ASR.W     D7,D3
-*           ROR.W     D7,D3
+           LSR.B     D7,D3
+           LSR.B     #7,D3
+
+           LSR.W     D7,D3
+           LSR.W     #7,D3
+
+           LSR.L     D7,D3
+           LSR.L     #7,D3
+
+           LSL.B     D7,D3
+           LSL.B     #7,D3
+
+           LSL.W     D7,D3
+           LSL.W     #7,D3
+
+           LSL.L     D7,D3
+           LSL.L     #7,D3
+
+           ASR.B     D7,D3
+           ASR.B     #7,D3
+
+           ASR.W     D7,D3
+           ASR.W     #7,D3
+
+           ASR.L     D7,D3
+           ASR.L     #7,D3
+
+           ASL.B     D7,D3
+           ASL.B     #7,D3
+
+           ASL.W     D7,D3
+           ASL.W     #7,D3
+
+           ASL.L     D7,D3
+           ASL.L     #7,D3
+
+           ROR.B     D7,D3
+           ROR.B     #7,D3
+
+           ROR.W     D7,D3
+           ROR.W     #7,D3
+
+           ROR.L     D7,D3
+           ROR.L     #7,D3
+
+           ROL.B     D7,D3
+           ROL.B     #7,D3
+
+           ROL.W     D7,D3
+           ROL.W     #7,D3
+
+           ROL.L     D7,D3
+           ROL.L     #7,D3
 
            ********* BIN 6 ***************
            SUBQ.B     #1,D1
@@ -277,14 +369,14 @@ BRA_N      DIVS.W    D1,D2
            MOVEM.W   A6,(A7)
            MOVEM.W   D6,(A7)
 
-*           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
-*           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
-*           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
-*           MOVEM.W   A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
-*           MOVEM.W   A6,-(A7)
-*           MOVEM.W   D6,-(A7)
+           MOVEM.W   D0-D1/D3/D5-D7,-(A7)
+           MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
+           MOVEM.W   D0/D3/D5-D7/A4/A5-A6,-(A7)
+           MOVEM.W   A1-A3/A4/A6,-(A7)
+           MOVEM.W   D0/A1-A3/A4/A6,-(A7)
+           MOVEM.W   D7/A1-A3/A4/A6,-(A7)
+           MOVEM.W   A6,-(A7)
+           MOVEM.W   D6,-(A7)
            
            MOVEM.W   D0-D1/D3/D5-D7,$FE
            MOVEM.W   D0-D1/D3/D5-D7/A1/A3-A6,$FE
@@ -313,14 +405,14 @@ BRA_N      DIVS.W    D1,D2
            MOVEM.L   A6,(A7)
            MOVEM.L   D6,(A7)
 
-*           MOVEM.L   D0-D1/D3/D5-D7,-(A7)
-*           MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
-*           MOVEM.L   D0/D3/D5-D7/A4/A5-A6,-(A7)
-*           MOVEM.L   A1-A3/A4/A6,-(A7)
-*           MOVEM.L   D0/A1-A3/A4/A6,-(A7)
-*           MOVEM.L   D7/A1-A3/A4/A6,-(A7)
-*           MOVEM.L   A6,-(A7)
-*           MOVEM.L   D6,-(A7)
+           MOVEM.L   D0-D1/D3/D5-D7,-(A7)
+           MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,-(A7)
+           MOVEM.L   D0/D3/D5-D7/A4/A5-A6,-(A7)
+           MOVEM.L   A1-A3/A4/A6,-(A7)
+           MOVEM.L   D0/A1-A3/A4/A6,-(A7)
+           MOVEM.L   D7/A1-A3/A4/A6,-(A7)
+           MOVEM.L   A6,-(A7)
+           MOVEM.L   D6,-(A7)
            
            MOVEM.L   D0-D1/D3/D5-D7,$FE
            MOVEM.L   D0-D1/D3/D5-D7/A1/A3-A6,$FE
@@ -419,6 +511,45 @@ BRA_N      DIVS.W    D1,D2
            LEA       $EF,A6
            LEA       $FFFF,A7
 
+           ADDA.W     D1,A1
+           ADDA.W     $88,A2
+           ADDA.W     $FFF88,A2
+           ADDA.W     (A1),A7
+           ADDA.W     (A1)+,A2
+           ADDA.W     -(A1),A5
+           ADDA.L     D1,A1
+           ADDA.L     $88,A2
+           ADDA.L     $FFF88,A2
+           ADDA.L     (A1),A7
+           ADDA.L     (A1)+,A2
+           ADDA.L     -(A1),A5
+         
+           CMPA.W     D1,A1
+           CMPA.W     $88,A2
+           CMPA.W     $FFF88,A2
+           CMPA.W     (A1),A7
+           CMPA.W     (A1)+,A2
+           CMPA.W     -(A1),A5
+           CMPA.L     D1,A1
+           CMPA.L     $88,A2
+           CMPA.L     $FFF88,A2
+           CMPA.L     (A1),A7
+           CMPA.L     (A1)+,A2
+           CMPA.L     -(A1),A5
+         
+           SUBA.W     D1,A1
+           SUBA.W     $88,A2
+           SUBA.W     $FFF88,A2
+           SUBA.W     (A1),A7
+           SUBA.W     (A1)+,A2
+           SUBA.W     -(A1),A5
+           SUBA.L     D1,A1
+           SUBA.L     $88,A2
+           SUBA.L     $FFF88,A2
+           SUBA.L     (A1),A7
+           SUBA.L     (A1)+,A2
+           SUBA.L     -(A1),A5
+         
            ********* BIN 9 ***************
            BCLR      D1,D4
            BCLR      D3,(A4)
@@ -568,12 +699,6 @@ BRA_N      DIVS.W    D1,D2
            CMPI.L    #153,(A1)
            CMPI.L    #92,(A1)+
            CMPI.L    #6,-(A1)
-
-*           LSR.W     #7,D3
-*           ASR.W     #7,D3
-*           ROR.W     #7,D3
-********** All of this causes error, for now (well, only ROR)
-*           
 
            ********* INVALID STUFF
            MOVE.W    #$12,D3

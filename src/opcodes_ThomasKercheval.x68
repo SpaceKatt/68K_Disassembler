@@ -12,6 +12,7 @@ LF         EQU       $0A             * Line feed
 ******************** Opcode Start *********************************************
 OP_START   JSR       READ_OP         * Read opcode into D1
            BRA       NOP_RTS_T       * Check for NOP/RTS
+           BRA       EXTRA_CRED
 OP_TREE_C  MOVE      #0,CCR          * Clear condition register
            BRA       OP_TREE         * Branch to decision tree
 
@@ -23,15 +24,45 @@ READ_OP    MOVE.W    (A0)+,D1        * Read opcode into D1
            RTS
 
 *******************************************************************************
+******************* ADHOC checks for extra credit *****************************
+********** These checks are not good (uses linear serach) *********************
+********** Since these operators were not included in our original design *****
+********** They are not done in as efficient of a way *************************
+*******************************************************************************
+EXTRA_CRED MOVE.W    #$F0C0,D2           * Move mask to D2
+           AND.W     D1,D2               * Mask dem bits
+           CMPI.W    #$B0C0,D2           * Check for CMPA
+           BEQ       O_CMPA
+           CMPI.W    #$90C0,D2           * Check for SUBA
+           BEQ       O_SUBA
+           
+           BRA       OP_TREE_C           * EXTRA_CRED ops not found
+           
+          
+           ********* CMPA *****************************************************
+O_CMPA     LEA       STR_CMPA,A6      * Load CMPA string into A6
+           BRA       CMPASUBA
+
+           ********* SUBA *****************************************************
+O_SUBA     LEA       STR_SUBA,A6      * Load SUBA string into A6
+           BRA       CMPASUBA
+
+*******************************************************************************
 ******************* Checks for NOP/RTS ****************************************
 NOP_RTS_T  CMP.W     (CON_NOP),D1    * Is the opcode NOP?
            BEQ       O_NOP           * Take care of NOP
            CMP.W     (CON_RTS),D1    * Is the opcode RTS?
            BEQ       O_RTS           * Take care of RTS
-           BRA       OP_TREE_C
+           CMPI.W    #$4E4F,D1       * Is it TRAP #15?
+           BEQ       O_TRAP
+           BRA       EXTRA_CRED
 
            ********* NOP ******************************************************
 O_NOP      LEA       STR_NOP,A6      * Load NOP string into A6
+           BRA       WRITE_ANY
+
+           ********* NOP ******************************************************
+O_TRAP     LEA       STR_TRAP,A6      * Load NOP string into A6
            BRA       WRITE_ANY
 
            ********* RTS ******************************************************
@@ -66,6 +97,9 @@ OP_TREE    BTST      #15,D1          * Test MSB in opcode
            AND.W     D1,D2           * MASK bits
            CMPI.W    #$0400,D2       * Will be zero if 8-11 are 0100
            BEQ       O_NEG
+
+           CMPI.W    #$0200,D2       * Will be zero if 8-11 are 0100
+           BEQ       O_CLR
 
            CMPI.W    #$0E00,D2       * Will be zero if 8-11 are 1110
            BEQ       O_JSR
@@ -354,6 +388,12 @@ O_NEG      MOVE.W    #1,EA_FLAG      * Load flag for EA
            BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
+********** NEG ****************************************************************
+O_CLR      MOVE.W    #1,EA_FLAG      * Load flag for EA
+           LEA       STR_CLR,A6      * Load CLR string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
+
+*******************************************************************************
 ********** JSR ****************************************************************
 O_JSR      MOVE.W    #1,EA_FLAG      * Load flag for EA
            MOVE.W    MASK_6_7,D2     * Load mask for validation
@@ -451,19 +491,33 @@ O_EOR      MOVE.W    #9,EA_FLAG      * Load flag for EA
 ********** MULS ***************************************************************
 O_MULS     MOVE.W    MASK_6_8,D2     * Load mask for validation
            AND.W     D1,D2           * Mask to check bits 6-8
-           CMPI.W    #$01C0,D2       * They should be %111
-           BNE       INVALID_OP      * Else, invalid op
+           CMPI.W    #$00C0,D2       * They should be %011 for MULU
+           BEQ       O_MULU          * is mulu
+           CMPI.W    #$01C0,D2       * They should be %111 for MULS
+           BEQ       O_AND           * Else, is AND
 
-           MOVE.W    #2,EA_FLAG      * Load flag for EA
            LEA       STR_MULS,A6     * Load MULS string into A6
-           JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
+
+WR_MULUS   JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
            LEA       STR_PERI,A6     * Load '.' string into A6
            JSR       WRITE_ANY       * Write '.' to buffer
 
            MOVE.W    #1,SIZE_OP      * 1 into size_op to represent word for API
            LEA       STR_WORD,A6
 
+           MOVE.W    #2,EA_FLAG      * Load flag for EA
            BRA       WR_PRP_EA
+
+*******************************************************************************
+********** MULU ***************************************************************
+O_MULU     LEA       STR_MULU,A6
+           BRA       WR_MULUS
+           
+*******************************************************************************
+********** AND ****************************************************************
+O_AND      MOVE.W    #3,EA_FLAG      * Load flag for EA
+           LEA       STR_ADD,A6      * Load AND string into A6
+           BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
 ********** ADD ****************************************************************
@@ -473,8 +527,8 @@ O_ADD      MOVE.W    #3,EA_FLAG      * Load flag for EA
 
 *******************************************************************************
 ********** ADDA ***************************************************************
-O_ADDA     MOVE.W    #8,EA_FLAG      * Load flag for EA
-           LEA       STR_ADDA,A6     * Load ADDA string into A6
+O_ADDA     LEA       STR_ADDA,A6     * Load ADDA string into A6
+CMPASUBA   MOVE.W    #8,EA_FLAG      * Load flag for EA
            JSR       WRITE_ANY       * Writes the op (previously loaded to A6)
 
            LEA       STR_PERI,A6     * Load '.' string into A6
@@ -703,7 +757,10 @@ STR_MOVEM  DC.B      'MOVEM',0
 STR_MOVEA  DC.B      'MOVEA',0
 STR_ORI    DC.B      'ORI',0
 STR_ADD    DC.B      'ADD',0
+STR_AND    DC.B      'AND',0
 STR_ADDA   DC.B      'ADDA',0
+STR_SUBA   DC.B      'SUBA',0
+STR_CMPA   DC.B      'CMPA',0
 STR_BCLR   DC.B      'BCLR',0
 STR_BTST   DC.B      'BTST',0
 STR_CMP    DC.B      'CMP',0
@@ -723,11 +780,14 @@ STR_ASL    DC.B      'ASL',0
 STR_ROR    DC.B      'ROR',0
 STR_ROL    DC.B      'ROL',0
 STR_MULS   DC.B      'MULS',0
+STR_MULU   DC.B      'MULU',0
 STR_NEG    DC.B      'NEG',0
+STR_CLR    DC.B      'CLR',0
 STR_OR     DC.B      'OR',0
 STR_SUB    DC.B      'SUB',0
 STR_SUBQ   DC.B      'SUBQ',0
 STR_ADDQ   DC.B      'ADDQ',0
+STR_TRAP   DC.B      'TRAP       #15',0
 
 STR_PERI   DC.B      '.',0
 STR_SPACE  DC.B      ' ',0
