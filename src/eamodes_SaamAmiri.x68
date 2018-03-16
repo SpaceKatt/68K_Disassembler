@@ -144,16 +144,11 @@ reg_rot
   *MOVE.W  D3,D6             * save temp
   LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
-  JSR     mode000           * sum reg bits
+  JSR     mode000           * sum Dn reg bits
   MOVE.W  D6,D3
-  JSR     mode000
-  RTS
-  
-  
-skip_rot
   JSR     write_comma       * write comma
-  MOVE.W  D7,D3             * restore
-  JSR     mode000           * data reg write
+  JSR     mode000           * sum Dn reg bits
+  RTS
   
 bin6 * SUBQ (special case)
   MOVE.W  D3,D7             * save temp
@@ -514,15 +509,6 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
-
-
-
-
-
-
-
-
-
 
 
 *~Font name~Courier New~
