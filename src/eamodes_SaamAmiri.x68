@@ -294,12 +294,53 @@ mode0
   BNE    mode01
   BRA    mode00
   
-mode11 * assume mode 11->111
-  BTST   #2,D3              * test register for (xxx).W,(xxx).L,#imm
-  BNE    reg100             * assume if 1 -> 100 = #imm
-  BRA    reg00              * assume if 0 -> 00
+mode11 
+  SUB.B  #1,D5
+  BTST   D5,D3
+  BNE    mode111
+  BRA    mode110
   
-reg100 *assume 1->100 #imm  
+mode10
+  SUB.B  #1,D5
+  BTST   D5,D3
+  BNE    mode101
+  BRA    mode100
+
+mode01
+  SUB.B  #1,D5              * decrement bit counter 
+  BTST   D5,D3              * check mode bit 2
+  BNE    mode011
+  BRA    mode010
+  
+mode00
+  SUB.B  #1,D5              * decrement bit counter 
+  BTST   D5,D3              * check mode bit 2
+  BNE    mode001
+  BRA    mode000
+
+mode111 
+  SUB.B  #1,D5
+  BTST   D5,D3              * test register for (xxx).W,(xxx).L,#imm
+  BNE    reg100             * assume if 1 -> 100 = #imm
+  BRA    reg0               * test for remaining EA modes
+  
+mode110                     * invalid mode (d8,An,Xn)
+  MOVE.B #1,D0              * set bad flag for invalid mode
+  RTS
+
+mode101                     * invalid mode (d16,An)
+  MOVE.B #1,D0              * set bad flag for invalid mode
+  RTS 
+  
+mode100                     * assume if mode 10->100= -(An)
+  LEA    STR_DECA,A6        * load  -(A
+  JSR    write_str          * write -(A to buff
+  JSR    reg_sum            * sum reg, write to buff
+  LEA    STR_CP,A6          * load  ) 
+  JSR    write_str          * write ) to buff
+  RTS                       * return to bin
+
+reg100                      *assume reg 1->100 #imm  
   LEA    STR_IMM,A6         * load  #
   JSR    write_str          * write #
   LEA    STR_$,A6           * load  $
@@ -310,44 +351,45 @@ reg100 *assume 1->100 #imm
   BRA    read_word          * proccess word   
   RTS
   
-reg00                        *TODO add validation assume 00
-  BTST   #0,D3
+reg0
+  SUB.B  #1,D5
+  BTST   D5,D3              * test for Ea modes  
+  BNE    reg01                
+  BRA    reg00              
+  
+reg00                       
+  SUB.B  #1,D5
+  BTST   D5,D3
   BNE    reg001
   BRA    reg000
   
-reg001 * (xxx).L                       
+reg01
+  SUB.B  #1,D5
+  BTST   D5,D3              * test for Ea modes             
+  BNE    reg011              
+  BRA    reg010             
+  
+reg011                      * (d8,PC,Xn)
+  MOVE.B #1,D0              * invalid ea mode
+  RTS
+ 
+reg010                      * (d16,PC)
+  MOVE.B #1,D0              * invalid ea mode
+  RTS
+  
+reg001                      * (xxx).L                       
   LEA    STR_$,A6           * load  $
   JSR    write_str          * write $
   JSR    read_long          * proccess long
   RTS
 
-reg000 * (xxx).W
+reg000                      * (xxx).W
   LEA    STR_$,A6           * load  $
   JSR    write_str          * write $
   JSR    read_word          * proccess word
   RTS
 
 
-mode10                      * assume if mode 10->100= -(An)
-  LEA    STR_DECA,A6        * load  -(A
-  JSR    write_str          * write -(A to buff
-  JSR    reg_sum            * sum reg, write to buff
-  LEA    STR_CP,A6          * load  ) 
-  JSR    write_str          * write ) to buff
-  RTS                       * return to bin
-  * prep for caller
-mode01
-  SUB.B  #1,D5              * decrement bit counter 
-  BTST   D5,D3              * check mode bit 2
-  BNE    mode011
-  BRA    mode010
-
-mode00
-  SUB.B  #1,D5              * decrement bit counter 
-  BTST   D5,D3              * check mode bit 2
-  BNE    mode001
-  BRA    mode000
-   
 mode011 * (An)+
   LEA    STR_INDA,A6        * load  (A
   JSR    write_str          * write (A to buff 
@@ -356,7 +398,6 @@ mode011 * (An)+
   JSR    write_str          * write )+ to buff
   RTS                       * return to bin
 
-    
 mode010 * (An)
   LEA    STR_INDA,A6        * load  (A
   JSR    write_str          * write (A to buff 
@@ -488,11 +529,8 @@ long_loop
 *END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
-
-*SUMTABLE1  DC.B      $30,$31,$32,$33,$34,$35,$36,$37
 SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
            DC.B      '9','A','B','C','D','E','F'
-
 
 STR_IMM    DC.B      '#',0
 STR_$      DC.B      '$',0
@@ -509,6 +547,7 @@ STR_CP     DC.B      ')',0
 STR_CPINC  DC.B      ')','+',0
 STR_COMMA  DC.B      ',',0        
   END START
+
 
 
 *~Font name~Courier New~
