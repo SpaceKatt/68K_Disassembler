@@ -1,9 +1,9 @@
 *-----------------------------------------------------------
 * Title      : Disassembler I/O
 * Written by : Natalia Gilbertson of Sexy8K
-* Date       :
+* Date       : 2/15/2018
 * Description: Takes in and parses user input for the disassembling to begin.
-*        Prints out the disassembled code 80 lines at a time.
+*              Prints out the disassembled code 20 lines at a time.
 *-----------------------------------------------------------
 
 CR              EQU       $0D   * Carriage return
@@ -102,8 +102,7 @@ loopPrintLines  CMP.L   A3,A0                   * while pointerToNextOpcode <= e
                                                 *                           D0 (bad flag)
                 MOVE.B  #0,D0                   * clear bad flag
                 
-        ****************************CALL OPCODES HERE*******************************************
-                JSR     OP_START
+                JSR     OP_START                * call opcodes
         
                 MOVEM.L (SP)+,D1-D7/A1/A3-A6    * restore all registers except A0,A2,D0
         
@@ -114,9 +113,6 @@ loopPrintLines  CMP.L   A3,A0                   * while pointerToNextOpcode <= e
 noFlagSet       MOVE.B  #0,(A2)+                * null terminate the string stored at (A2)
                 
                 JSR     OutputTheBuffer
-        
-        *********************** REMOVE THIS LINE WHEN INTEGRATING *******************************
-                ****ADDA    #2,A0   *MOCK opcodes + EA reading a word
             
                 BRA     loopPrintLines          * go back to process and print another line            
        
@@ -201,8 +197,12 @@ digitBt0And9            ADD.B   (A4),D7               * add the translated byte 
                         LSL.L   #$04,D7               * shift the translated part of the address four bits to the left
 doNotShiftThisTime      BRA     TITARloop1            * shifting allows adding the next nibble of the translated address to D7
                         
-endTITARloop1           MOVE.L D7,A6                  * move the translated address into an address register
-                        RTS
+endTITARloop1           CMP.B   #4,D4
+                        BGT     moveLongAddress       * if the address is >4 hex chars long move it into an address reg as a long
+                        MOVEA.W D7,A6                 * if the address is <=4 hex chars move it as a word (supports sign extension)
+                        BRA     endMethodTITAR 
+moveLongAddress         MOVEA.L D7,A6                 * move the translated address into an address register
+endMethodTITAR          RTS
                         
 * each disassembled line needs the address of the instruction in memory
 * printed on the left side, this method loads the address into the output buffer
@@ -272,8 +272,7 @@ loopHBF                 CMP.B   #4,D3                     * loop for each hex ch
                         
 endMethodHBF            RTS
                         
-* print a disassembled instructions to the user                        
-******* FIX BUG, POSSIBLY HERE
+* print a disassembled instructions to the user      
 OutputTheBuffer         MOVE.B  #0,D0                     * load trap task for printing a string at A1
                         LEA     OutputBuffer,A1           * load output buffer into A1
                         MOVEA.L A2,A5                     * get the current pointer spot in the output buffer
@@ -311,13 +310,6 @@ OutputBuffer            DCB.B   84,0
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
-
-
-
-
-
-
-
 *~Font name~Courier~
 *~Font size~10~
 *~Tab type~1~
