@@ -11,23 +11,24 @@ LF         EQU       $0A            * Line feed
            ORG       $10000
 START:                              * first instruction of program
 ******************** Start*****************************************************
-           MOVEA.L  $8000,SP
-           CLR.L    D0
-           PEA      (COLD_CUT,PC)
-           MOVEA.L  (SP)+,A0
-           MOVE.L   #16,D0
+           MOVEQ    #$FF,D0
+           MOVEA.W  #$FF,A0
 
            ********* INVALID ADDRESSING MODES
-COLD_CUT   MOVE.W   (6,A0),D4
-           MOVE.W   (6,A0,D0),D4
-           MOVE.W   (6,A0,A0),D4
+COLD_CUT   MOVE.W   ($FFF,A0),D4
+           MOVE.W   ($F,A0,D0),D4
+           MOVE.W   ($F,A0,A0),D4
            MOVE.W   (COLD_CUT,PC),D4
            MOVE.W   (COLD_CUT,PC,D0),D4
            MOVE.W   (COLD_CUT,PC,A0),D4
+
+           ********* INVALID OPS
+           MOVEQ     #$12,D3
+
            ********* BIN 0 ***************
+
            TRAP      #15
            MOVE.B    D0,D3
-           MOVE.B    #$12,D3
            MOVE.B    D7,(A3)
            MOVE.B    D4,(A3)+
            MOVE.B    D1,-(A3)
@@ -42,7 +43,7 @@ COLD_CUT   MOVE.W   (6,A0),D4
            MOVE.W    #394,$4035
 
            MOVE.L    D0,D3
-           MOVE.L    #$12,D3
+           MOVE.L    #$1992,D3
            MOVE.L    D7,(A3)
            MOVE.L    D4,(A3)+
            MOVE.L    D1,-(A3)
@@ -71,6 +72,14 @@ COLD_CUT   MOVE.W   (6,A0),D4
            NEG       (A1)
            NEG       -(A2)
            NEG       (A7)+
+
+           CLR       D0
+           CLR       $398
+           CLR       $F398
+           CLR       (A1)
+           CLR       -(A2)
+           CLR       (A7)+
+
            JSR       BINZZ
 
            LSR.W     (A5)
@@ -155,6 +164,12 @@ BRA_N      DIVS.W    D1,D2
            MULS.W    (A1),D2
            MULS.W    (A1)+,D2
            MULS.W    -(A1),D2
+
+           MULU.W    D1,D2
+           MULU.W    #$A,D2
+           MULU.W    (A1),D2
+           MULU.W    (A1)+,D2
+           MULU.W    -(A1),D2
 
            CMP.B     D1,D2
            CMP.B     #$A,D2
@@ -293,6 +308,44 @@ BRA_N      DIVS.W    D1,D2
            ADD.L     D7,(A1)
            ADD.L     D2,(A1)+
            ADD.L     D5,-(A1)
+ 
+           AND.B     D1,D1
+           AND.B     $88,D2
+           AND.B     $FFF88,D2
+           AND.B     (A1),D7
+           AND.B     (A1)+,D2
+           AND.B     -(A1),D5
+           AND.W     D1,D1
+           AND.W     $88,D2
+           AND.W     $FFF88,D2
+           AND.W     (A1),D7
+           AND.W     (A1)+,D2
+           AND.W     -(A1),D5
+           AND.L     D1,D1
+           AND.L     $88,D2
+           AND.L     $FFF88,D2
+           AND.L     (A1),D7
+           AND.L     (A1)+,D2
+           AND.L     -(A1),D5
+         
+           AND.B     D1,D1
+           AND.B     D2,$88
+           AND.B     D2,$FFF88
+           AND.B     D7,(A1)
+           AND.B     D2,(A1)+
+           AND.B     D5,-(A1)
+           AND.W     D1,D1
+           AND.W     D2,$88
+           AND.W     D2,$FFF88
+           AND.W     D7,(A1)
+           AND.W     D2,(A1)+
+           AND.W     D5,-(A1)
+           AND.L     D1,D1
+           AND.L     D2,$88
+           AND.L     D2,$FFF88
+           AND.L     D7,(A1)
+           AND.L     D2,(A1)+
+           AND.L     D5,-(A1)
 
            ********* BIN 5 ***************
            ** TODO
@@ -588,6 +641,13 @@ BRA_N      DIVS.W    D1,D2
            BCLR      D5,$302
            BCLR      D5,$30243
 
+           BTST      D1,D4
+           BTST      D3,(A4)
+           BTST      D3,(A4)+
+           BTST      D7,-(A4)
+           BTST      D5,$302
+           BTST      D5,$30243
+
            EOR.B     D1,D1
            EOR.B     D2,$88
            EOR.B     D2,$FFF88
@@ -615,6 +675,12 @@ BRA_N      DIVS.W    D1,D2
            BCLR      #3,(A4)+
            BCLR      #7,-(A4)
            BCLR      #8,$FF302
+
+           BTST      #1,D4
+           BTST      #3,(A4)
+           BTST      #3,(A4)+
+           BTST      #7,-(A4)
+           BTST      #8,$FF302
 
            ORI.B     #10,D2
            ORI.B     #26,$88
