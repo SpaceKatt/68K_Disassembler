@@ -131,6 +131,8 @@ ThrowInputError LEA     InvalidInputError,A1  * load address that holds error st
                 MOVE.B  #0,D0                 * print the string
                 MOVE.B  #155,D1
                 TRAP    #15
+                LEA     InvalidRangeMsg,A1
+                TRAP    #15
 
                 CLR.L   D0
                 CLR.L   D1
@@ -297,7 +299,8 @@ PromptToPressENTER      DC.B    'Press ENTER to get the next page of disassemble
 Welcome                 DC.B    'Welcome to our disassembler!',CR,LF,'Created by Sexy8k: [Natalia Gilbertson][Thomas Kercheval][Saam Amiri]',CR,LF,'Please load your file into memory.',CR,LF,CR,LF,0
 EOF                     DC.B    '~ End of file ~',0
 * error message
-InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',0
+InvalidInputError       DC.B    'ERROR: Invalid input address. Addresses must be between 1 and 8 characters long, ',CR,LF,'at a word boundary, and containing only digits 0-9 and characters A-F.',CR,LF,0
+InvalidRangeMsg         DC.B    'The starting address must also be less than or equal to the ending address',0
 
 StoreInputStartAddr     DC.L    0   * each address needs 8 bytes to be read into memory
 StoreInputStartAddr2    DC.L    0   * so more space is built in
