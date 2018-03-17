@@ -12,7 +12,7 @@ Stack           EQU       $8000 * where the stack pointer begins
 PageOfOutput    EQU       20    * how many lines of disassembled code is printing
                                 * when the user presses ENTER
 
-           ORG       $90000
+           ORG       $1000
 START:                          * first instruction of program
 ******************** Start*****************************************************
                 LEA     Stack,SP                * load stack pointer value (A7 is stack pointer)
