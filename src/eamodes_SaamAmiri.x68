@@ -105,7 +105,7 @@ bin4                        * 8 bit branch displacment
   MOVE.W  #$00FF,D1         * bitmask to reuse word logic
   AND.W   D3,D1             * bitmasked keeps LSByte
   
-  MOVE.W  #$000F,D6         * nibble bit mask const  
+  MOVE.W  #$000F,D5         * nibble bit mask const  
   MOVE.W  #3,D7             * nibble counter  
   JSR     word_loop         * write hex word from left->right
   RTS
