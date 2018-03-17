@@ -2,25 +2,11 @@
 * Title      : EA resolution
 * Written by : Saam Amiri
 * Date       :
-* Description:
+* Description: With given data from OPCode module this returns
+*              EA modes with correct formatting to the buffer
 *-----------------------------------------------------------
-*STACK      EQU     $8000  
-*CR         EQU     $0D      * Carriage return
-*LF         EQU     $0A      * Line feed
-*
-*         ORG       $1000
-*START:                      * first instruction of program
-*  LEA     STACK,SP
-*  *MOVE.B  #3,D2
-*  *MOVE.W  #$3308,D3
-*  MOVE.B   #10,D2
-*  MOVE.W   #$0107,D3
-*  JSR      START_EA
-* 
-*  SIMHALT
-  
-START_EA                    *OPCODE coming in
-  CMP     #0,D2
+START_EA                    * OPCODE coming in
+  CMP     #0,D2             * compare input flag from OPCODE
   BEQ     bin0
 
   CMP     #1,D2
@@ -55,10 +41,9 @@ START_EA                    *OPCODE coming in
 
   MOVE.W  #2,D0             * Set invalid flag
   RTS                       * Return to OP-module
-  *BRA     END               * D2 not set to proper EA Flag
   
     
-bin0 * 12 bit      
+bin0                        * 12 bit      
   JSR     mode_test         * tests source mode/reg
   LEA     STR_COMMA,A6      * load  ,
   JSR     write_str         * write , to buff
@@ -76,13 +61,12 @@ bin0 * 12 bit
   JSR     mode_test         *
   RTS                       * return to OPCODER
 
-bin1 * 6 bit
+bin1                        * 6 bit
   JSR     mode_test         * test mode/reg write to buff 
   RTS                       * return to OPCODER
   
-bin2 * 9 bit Data <ea>,Dn
-  JSR     mode_test
-
+bin2                        * 9 bit Data <ea>,Dn
+  JSR     mode_test         * test mode/reg write to buff
   LEA     STR_COMMA,A6      * load  ,
   JSR     write_str         * write , to buff
   LEA     STR_D,A6          * load  D
@@ -93,27 +77,24 @@ bin2 * 9 bit Data <ea>,Dn
   MOVE.W  #$0007,D5         * bitmask all except 3 LSB
   AND.W   D5,D3             * keep only 3 LSB
   JSR     reg_sum           * sum reg bits
-  RTS                       *return to OPCODER
+  RTS                       * return to OPCODER
   
-bin3 * 9 bit Data w/Direction
+bin3                        * 9 bit Data w/Direction
   BTST    #8,D3             * check direction bit
   BEQ     bin2              * bra if bit = zero
  
   MOVE.W  D3,D7             * store temp 
- 
   LEA     STR_D,A6          * load  D
   JSR     write_str         * write D to buff
   LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   JSR     reg_sum           * sum reg bits
-
   JSR     write_comma       * write , to buff
-
   MOVE.W  D7,D3             * restore D3
   JSR     mode_test         * print destination
   RTS                       * return to OPCODER
 
-bin4 * 8 bit branch displacment
+bin4                        * 8 bit branch displacment
   LEA     STR_$,A6          * load  $  
   JSR     write_str         * write $ to buff  
   
@@ -129,11 +110,9 @@ bin4 * 8 bit branch displacment
   JSR     word_loop         * write hex word from left->right
   RTS
  
-bin5 * Special rotation (12 bit)
+bin5                        * Special rotation (12 bit)
   MOVE.W  D3,D6             * save temp
   AND.W   #$FFC7,D3         * bit mask make EA reg DN
-  *LSR.W   #$8,D3            * shift dest reg to source reg index
-  *LSR.W   #$1,D3            * max of 8 bit shifts per OP
   BTST    #5,D6             * check direction bit
   BEQ     imm_rot           * immediate used
   BNE     reg_rot           * data reg used
@@ -141,7 +120,6 @@ imm_rot
   JSR     bin6
   RTS
 reg_rot
-  *MOVE.W  D3,D6             * save temp
   LSR.W   #$8,D3            * shift dest reg to source reg index
   LSR.W   #$1,D3            * max of 8 bit shifts per OP
   JSR     mode000           * sum Dn reg bits
@@ -150,7 +128,7 @@ reg_rot
   JSR     mode000           * sum Dn reg bits
   RTS
   
-bin6 * SUBQ (special case)
+bin6                        * SUBQ (special case)
   MOVE.W  D3,D7             * save temp
   LEA     STR_IMM,A6        * load  #
   JSR     write_str         * write #
@@ -205,9 +183,8 @@ reg_set
   MOVE.B  #0,D0              * init counter
   LEA     STR_DA,A4          * points at 'D' will write D(D0)
   MOVE.W  D6,D3              * place bitmasked word
-  *MOVE.W  (A0)+,D3           * grab reg bit masked word
   JSR     reg_list           * proccess LS Byte registers
-*next byte of register set
+                             * next byte of register set
   MOVE.B  #0,D0              * init counter
   MOVE.W  D3,D6              * save temp 
   JSR     write_slash        * checks if slash needed
@@ -231,8 +208,7 @@ write_slash
   JSR     write_str          * write /
   RTS
   
-flip_op * Bit tested = 0 -> (<list>,EA)
-  * Save copy of D3
+flip_op                      * Bit tested = 0 -> (<list>,EA)
   MOVE.W  D3,D7              * save temp
   JSR     reg_set            * print reg reg set
   JSR     write_comma        * print comma
@@ -253,7 +229,7 @@ bin8 * 9 bit Address
   JSR     reg_sum           * sum reg bits
   RTS                       * return to OPCODER
                         
-bin9  * just like 2 but Dn,<ea>
+bin9                        * just like 2 but Dn,<ea>
   MOVE.W  D3,D7             * save temp
   LEA     STR_D,A6          * load  D
   JSR     write_str         * write D to buff
@@ -269,57 +245,57 @@ bin9  * just like 2 but Dn,<ea>
   JSR     mode_test         * test orginal
   RTS                       * return to OPCODER
 
-bin10 * 6 bit w/immediate
+bin10                       * 6 bit w/immediate
   JSR     reg100            * jump straight to imm register for print
   JSR     write_comma       * write comma
   JSR     mode_test         * test mode/reg write to buff
   RTS
 
-**Function finds mode than calls reg_test than returns back to Bin caller 
+*Function finds mode than calls reg_test than returns back to Bin caller 
 mode_test
-  MOVE.B #5,D5 *set bit decrement counter
-  BTST   D5,D3 *check mode bit 1
+  MOVE.B #5,D5              *set bit decrement counter
+  BTST   D5,D3              *check mode bit 
   BNE    mode1
   BRA    mode0
   
 mode1
-  SUB.B  #1,D5 *decrement bit counter 
-  BTST   D5,D3 *check mode bit 2
+  SUB.B  #1,D5              * decrement bit counter 
+  BTST   D5,D3              * check mode bit 
   BNE    mode11
   BRA    mode10 
 
 mode0
-  SUB.B  #1,D5
-  BTST   D5,D3
+  SUB.B  #1,D5              * decrement bit counter
+  BTST   D5,D3              * check mode bit  
   BNE    mode01
   BRA    mode00
   
 mode11 
-  SUB.B  #1,D5
-  BTST   D5,D3
+  SUB.B  #1,D5              * decrement bit counter
+  BTST   D5,D3              * check mode bit 
   BNE    mode111
   BRA    mode110
   
 mode10
-  SUB.B  #1,D5
-  BTST   D5,D3
+  SUB.B  #1,D5              * decrement bit counter
+  BTST   D5,D3              * check mode bit 
   BNE    mode101
   BRA    mode100
 
 mode01
   SUB.B  #1,D5              * decrement bit counter 
-  BTST   D5,D3              * check mode bit 2
+  BTST   D5,D3              * check mode bit 
   BNE    mode011
   BRA    mode010
   
 mode00
   SUB.B  #1,D5              * decrement bit counter 
-  BTST   D5,D3              * check mode bit 2
+  BTST   D5,D3              * check mode bit 
   BNE    mode001
   BRA    mode000
 
 mode111 
-  SUB.B  #1,D5
+  SUB.B  #1,D5              * decrement bit counter
   BTST   D5,D3              * test register for (xxx).W,(xxx).L,#imm
   BNE    reg100             * assume if 1 -> 100 = #imm
   BRA    reg0               * test for remaining EA modes
@@ -353,19 +329,19 @@ reg100                      *assume reg 1->100 #imm
   
 reg0
   SUB.B  #1,D5
-  BTST   D5,D3              * test for Ea modes  
+  BTST   D5,D3              * test for EA modes  
   BNE    reg01                
   BRA    reg00              
   
 reg00                       
-  SUB.B  #1,D5
+  SUB.B  #1,D5              * test for EA modes
   BTST   D5,D3
   BNE    reg001
   BRA    reg000
   
 reg01
   SUB.B  #1,D5
-  BTST   D5,D3              * test for Ea modes             
+  BTST   D5,D3              * test for EA modes             
   BNE    reg011              
   BRA    reg010             
   
@@ -390,7 +366,7 @@ reg000                      * (xxx).W
   RTS
 
 
-mode011 * (An)+
+mode011                     * (An)+
   LEA    STR_INDA,A6        * load  (A
   JSR    write_str          * write (A to buff 
   JSR    reg_sum            * sum reg, write to buff
@@ -398,7 +374,7 @@ mode011 * (An)+
   JSR    write_str          * write )+ to buff
   RTS                       * return to bin
 
-mode010 * (An)
+mode010                     * (An)
   LEA    STR_INDA,A6        * load  (A
   JSR    write_str          * write (A to buff 
   JSR    reg_sum            * sum reg, write to buff
@@ -406,14 +382,14 @@ mode010 * (An)
   JSR    write_str          * write ) to buff
   RTS                       * return to bin
 
-mode001 * An
+mode001                     * An
   LEA    STR_A,A6           * load  A
   JSR    write_str          * write A to buff 
   JSR    reg_sum            * sum reg, write to buff
   RTS                       * return to bin
 
 
-mode000 * Dn
+mode000                     * Dn
   LEA    STR_D,A6           * load  D
   JSR    write_str          * write D to buff 
   JSR    reg_sum            * sum reg, write to buff
@@ -427,13 +403,12 @@ reg_sum
   MOVE.B    (SUMTABLE,PC,A5),(A2)+ * store ascii at index to goodbuff 
   RTS                           * return to caller
 
-************************MOVEM****************************
+************************MOVEM**************************************
 reg_list
   BTST      D0,D3
   BNE       full_reg            * bit contains 1
   BEQ       empty_reg           * bit contains 0
       
-
 full_reg
   MOVE.B    (A4),(A2)+          * write 'D' or 'A' to buff
   MOVEA.W   D0,A5               * prepare for index
@@ -457,7 +432,7 @@ hyphen_loop
   SUBQ      #1,D0               * dec count to valid reg (cur reg is 0)    
   BRA       full_reg
       
-hyphen_end * subtract 1, print,RTS
+hyphen_end                      * subtract 1, print,RTS
   SUBQ      #1,D0               * decrement to valid reg
   MOVE.B    (A4),(A2)+          * write reg to buff
   MOVEA.W   D0,A5               * prepare for index into sumtable
@@ -465,14 +440,14 @@ hyphen_end * subtract 1, print,RTS
   RTS                           * return to caller
   
 slash
-  ADDQ      #1,D0              * inc counter
-  CMP.B     #8,D0              * check bounds
-  BEQ       return             * return
-  BTST      D0,D3              * test bit
-  BEQ       slash              * bit = 0 loop
-  LEA       STR_SLASH,A6       * bit = 1 write slash
-  JSR       write_str
-  BRA       full_reg           *  
+  ADDQ      #1,D0               * inc counter
+  CMP.B     #8,D0               * check bounds
+  BEQ       return              * return
+  BTST      D0,D3               * test bit
+  BEQ       slash               * bit = 0 loop
+  LEA       STR_SLASH,A6        * bit = 1 write slash
+  JSR       write_str           * write slash
+  BRA       full_reg            * contains reg 
            
 SUMTABLE   DC.B      '0','1','2','3','4','5','6','7','8'
            DC.B      '9','A','B','C','D','E','F'
@@ -483,13 +458,11 @@ empty_reg
   BEQ       return              * counter = range 
   BRA       reg_list            * continue
   
-  
 return
   RTS  
-*******************************************************
+**********************END MOVEM************************************
 
-*Function write string to the buffer
-write_str  
+write_str                       * write string to the buffer  
   CMPI.B    #0,(A6)             * is the byte at A6 the NULL Char?
   BEQ       write_done          * null terminated?
   MOVE.B    (A6)+,(A2)+         * increment string and buffer 
@@ -497,8 +470,8 @@ write_str
 write_done  RTS
  
 write_comma                     * write comma to buffer 
-  LEA       STR_COMMA,A6
-  JSR       write_str
+  LEA       STR_COMMA,A6        * load comma
+  JSR       write_str           * write comma
   RTS 
   
 read_word                       * proccess word after instruction
@@ -511,10 +484,8 @@ word_loop
   AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
   MOVE.B    (SUMTABLE,PC,A6),(A2)+ * store ascii at index to goodbuff
-  DBF       D7,word_loop        
+  DBF       D7,word_loop        * decrement and loop back until -1       
   RTS
-
-
 
 read_long                       * proccess long after instruction
   MOVE.L    (A0)+,D1            * read next long            
@@ -526,29 +497,27 @@ long_loop
   AND.W     D5,D2               * bitmask LS nibble
   MOVEA.W   D2,A6               * copy to address reg
   MOVE.B    (SUMTABLE,PC,A6),(A2)+ * store ascii at index to goodbuff
-  DBF       D7,long_loop
+  DBF       D7,long_loop        * decrement and loop back until -1
   RTS
 
-*END      SIMHALT
 *******************************************************************************
 ******************** Put variables and constants here *************************
 
-STR_IMM    DC.B      '#',0
-STR_$      DC.B      '$',0
-STR_SLASH  DC.B      '/',0
-STR_HYPHEN DC.B      '-',0
-STR_D      DC.B      'D',0
-STR_A      DC.B      'A',0
+STR_IMM     DC.B     '#',0
+STR_$       DC.B     '$',0
+STR_SLASH   DC.B     '/',0
+STR_HYPHEN  DC.B     '-',0
+STR_D       DC.B     'D',0
+STR_A       DC.B     'A',0
 
-STR_DA     DC.B      'D','A',0
+STR_DA      DC.B     'D','A',0
 
-STR_INDA   DC.B      '(','A',0
-STR_DECA   DC.B      '-','(','A',0 
-STR_CP     DC.B      ')',0
-STR_CPINC  DC.B      ')','+',0
-STR_COMMA  DC.B      ',',0        
+STR_INDA    DC.B     '(','A',0
+STR_DECA    DC.B     '-','(','A',0 
+STR_CP      DC.B     ')',0
+STR_CPINC   DC.B     ')','+',0
+STR_COMMA   DC.B     ',',0        
   END START
-
 
 
 
