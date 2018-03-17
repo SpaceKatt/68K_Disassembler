@@ -515,7 +515,7 @@ O_MULS     MOVE.W    MASK_6_8,D2     * Load mask for validation
            CMPI.W    #$00C0,D2       * They should be %011 for MULU
            BEQ       O_MULU          * is mulu
            CMPI.W    #$01C0,D2       * They should be %111 for MULS
-           BEQ       O_AND           * Else, is AND
+           BNE       O_AND           * Else, is AND
 
            LEA       STR_MULS,A6     * Load MULS string into A6
 
@@ -537,7 +537,7 @@ O_MULU     LEA       STR_MULU,A6
 *******************************************************************************
 ********** AND ****************************************************************
 O_AND      MOVE.W    #3,EA_FLAG      * Load flag for EA
-           LEA       STR_ADD,A6      * Load AND string into A6
+           LEA       STR_AND,A6      * Load AND string into A6
            BRA       NORM_OP_FL      * Write op, '.', get size, write size
 
 *******************************************************************************
