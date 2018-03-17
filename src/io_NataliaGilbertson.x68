@@ -62,7 +62,8 @@ restart         LEA     PromptStartAddr,A1      * load prompt to print, asking u
                 * ending address is at A3
 
                 CMPA.L  A3,A0                   * check that startAddress <= endAddress
-                BGT     endProg                 * exit program if start > end
+                *BGT     endProg                 * exit program if start > end
+                BHI      ThrowInputError
 
                 * clear some registers
                 CLR.L   D0
@@ -85,8 +86,8 @@ waitForENTER    LEA     OutputBuffer,A1
                 TRAP    #15                     * read input, expecting ENTER from user to proceed disassembling
 
 loopPrintLines  CMP.L   A3,A0                   * while pointerToNextOpcode <= ending address
-                BGT     endProg
-
+                *BGT     endProg
+                BHI     endProg
                 CMP.L   #PageOfOutput,D2        * stop printing when linesOutputted == linesInAPage
                 BEQ     waitForENTER            * go back to waiting for ENTER from user
                 ADD.B   #1,D2                   * increment linesOutputted
@@ -310,6 +311,7 @@ OutputBuffer            DCB.B   84,0
                         INCLUDE "opcodes_ThomasKercheval.x68"
 
     END    START                    * last line of source
+
 
 *~Font name~Courier~
 *~Font size~10~
