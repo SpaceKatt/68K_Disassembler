@@ -32,5 +32,5 @@ Group Members
 
 ### Test File
   - `68K_Disassembler/src/test_code/op_codes_to_test.x68`
-  - `ORG`'d at $1000
+  - `ORG`'d at $10000
 
